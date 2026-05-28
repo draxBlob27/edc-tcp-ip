@@ -1,5 +1,5 @@
 #ifndef TUNTAP_IF_H
-#define TUNATAP_If_H
+#define TUNATAP_IF_H
 #include "syshead.h"
 
 int tun_alloc(char *dev, int flags) {

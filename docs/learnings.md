@@ -12,4 +12,11 @@ interface in script as well.
 8. The usual case is that you know the IP address of some service in your LAN, but to establish actual communications, also the hardware address (MAC) needs to be known. Hence, ARP is used to broadcast and query the network, asking the owner of the IP address to report its hardware address.
 9. Get a deep understanding of padding and memory alignment in compilers. => __attribute__((packed))
 10. ARP - mapping of L3(ip) address to a L2(mac) address.(https://www.youtube.com/watch?v=QPi5Nvxaosw)
+11. RFC of ARP - (https://datatracker.ietf.org/doc/html/rfc826)
+12. To send a ARP reply message: what to fill in src mac: [Since this is a virtual interface, pick any locally-administered MAC, EXAMPLE: 0x52, 0x54, 0x00, 0x12, 0x34, 0x56].
+A locally administered MAC address (LAA) is a MAC address where the second least significant bit of the first byte is set to 1.
+13. To establish arp req-rep, i created 2 tap interfaces(namely tap0 and tap1).
+    tap0 send arp-request to tap1
+    tap1 sedn arp-reply to tap0 and vice versa
+
 

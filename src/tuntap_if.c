@@ -1,8 +1,8 @@
 #include "../include/tuntap_if.h"
 
-int main() {
+int main(int argc, char *argv[]) {
     char tun_name[IFNAMSIZ];
-    strcpy(tun_name, "tap0");
+    strcpy(tun_name, argv[1]);
     int tun_fd = tun_alloc(tun_name, IFF_TAP | IFF_NO_PI);
 
     if(tun_fd < 0){

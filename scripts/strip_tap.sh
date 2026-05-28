@@ -1,3 +1,4 @@
 #!/bin/bash
-sudo ip tuntap del dev tap0 mode tap
-echo "tap0 interface deleted"
+for i in $(ip tuntap list | awk -F: '{print $1}'); do
+    sudo ip link delete "$i" && echo "Deleted $i interface"
+done

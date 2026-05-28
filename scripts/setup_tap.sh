@@ -1,4 +1,14 @@
 #!/bin/bash
-sudo ip addr add 192.168.0.1/24 dev tap0 &&
-sudo ip link set up dev tap0 && 
-echo "tap0 setup done"
+echo "Use: ./setup_tap.sh (interface name) (ip addr)" &&
+echo "Interface name: $1" &&
+
+echo "Created persistant virtual interface: $1" &&
+sudo ./build/debug/src/tuntap_if $1 && 
+
+sudo ip addr add $2/24 dev $1 &&
+sudo ip link set up dev $1 && 
+
+echo "Attaching packet dumper to interface $1" &&
+./build/debug/tools/packet_dumper $1 &&
+
+echo "$1 up and attached"
