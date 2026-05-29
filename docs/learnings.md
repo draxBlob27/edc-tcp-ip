@@ -18,5 +18,5 @@ A locally administered MAC address (LAA) is a MAC address where the second least
 13. To establish arp req-rep, i created 2 tap interfaces(namely tap0 and tap1).
     tap0 send arp-request to tap1
     tap1 sedn arp-reply to tap0 and vice versa
-
-
+14. I am implementing a cache of size 256, with linear search, can use linked list with LRU eviction.
+    will think upon this later, currently linaer array with naive search.

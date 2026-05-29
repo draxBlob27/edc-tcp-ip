@@ -3,6 +3,8 @@
 
 #include "syshead.h"
 
+#define ETH_HDR_LEN sizeof(struct eth_hdr)
+
 struct eth_hdr {
     uint8_t dst_mac[6]; 
     uint8_t src_mac[6]; 
