@@ -1,0 +1,22 @@
+#include "../include/tuntap_alloc.h"
+
+int main(int argc, char *argv[]) {
+    char tun_name[IFNAMSIZ];
+    strcpy(tun_name, argv[1]);
+    int tun_fd = tun_alloc(tun_name, IFF_TAP | IFF_NO_PI);
+
+    if(tun_fd < 0){
+        perror("Allocating interface\n");
+        exit(1);
+    }
+
+    printf("Successfully attached/created interface %s\n", tun_name);
+    if (ioctl(tun_fd, TUNSETPERSIST, 1) < 0) {
+        perror("Enabling TUNSETPERSIST");
+        exit(1);
+    }
+
+    printf("Successfully persisted interface %s\n", tun_name);
+
+    return 0;
+}
