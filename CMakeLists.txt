@@ -10,3 +10,4 @@ set(CMAKE_C_FLAGS_RELEASE "-Ofast -DNDEBUG -march=native")
 
 add_subdirectory(tools)
 add_subdirectory(src)
+add_subdirectory(setup)

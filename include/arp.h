@@ -2,7 +2,7 @@
 #define ARP_H
 
 #include "syshead.h"
-#include "ehternet.h"
+#include "ethernet.h"
 #include "time.h"
 #include "netdev.h"
 
@@ -10,10 +10,11 @@
 #define ARP_HDR_LEN sizeof(struct arp_hdr)
 #define ARP_DATA_LEN sizeof(struct arp_ipv4)
 
-const uint16_t ARP_ETHERNET =   0x0001;
-const uint16_t ARP_IPV4     =   0x0800;
-const uint16_t ARP_REQUEST  =   0x0001;
-const uint16_t ARP_REPLY    =   0x0002;
+#define ARP_ETHERNET    0x0001
+#define ARP_ETHERTYPE   0x0806
+#define ARP_IPV4        0x0800
+#define ARP_REQUEST     0x0001
+#define ARP_REPLY       0x0002
 
 struct arp_hdr {
     uint16_t hwtype;     // Hardware type (Ethernet = 1)
@@ -44,7 +45,7 @@ struct arp_entry {
 };
 
 void arp_recv(void *buffer, int len);
-void arp_reply(void *buffer, struct netdev *net_dev);
+void arp_reply(struct arp_hdr *arphdr, struct arp_ipv4 *arpdata, struct netdev *dev);
 int arp_cache_update(struct arp_hdr *arphdr, struct arp_ipv4 *arpdata);
 int arp_cache_insert(struct arp_hdr *arphdr, struct arp_ipv4 *arpdata);
 

@@ -12,4 +12,6 @@ struct eth_hdr {
     uint8_t payload[];
 } __attribute__((packed));
 
+void parse_ethernet(void *buffer, int nread);
+
 #endif //ETHERNET_H

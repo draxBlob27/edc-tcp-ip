@@ -1,3 +1,9 @@
+*** How to run for now
+./scripts/setup_tap.sh <ifname> <ipaddr>
+tap0 <ipaddr> = 192.168.0.1, <macaddr>
+tap1 <ipaddr> = 192.168.0.2, <macaddr>
+
+
 1. Understanding TUN/TAP was not easy. 
     -> Best resource, slighlty hard to ingest but very good and thorugh.(https://backreference.org/2010/03/26/tuntap-interface-tutorial/)
 
@@ -20,3 +26,6 @@ A locally administered MAC address (LAA) is a MAC address where the second least
     tap1 sedn arp-reply to tap0 and vice versa
 14. I am implementing a cache of size 256, with linear search, can use linked list with LRU eviction.
     will think upon this later, currently linaer array with naive search.
+15. nread returned from reading fd, is useful when writing to the fd.
+16. Unitialzed pointer variable is not a modifiable lvalue.
+17. Always use mecpy when copying arrays using ptrs.
