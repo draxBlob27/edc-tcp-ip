@@ -3,6 +3,9 @@
 tap0 <ipaddr> = 192.168.0.1, <macaddr>
 tap1 <ipaddr> = 192.168.0.2, <macaddr>
 
+./scripts/setup_tap.sh tap0 192.168.0.1 02:11:22:33:44:55
+./scripts/setup_tap.sh tap1 192.168.0.2 02:AA:BB:CC:DD:EE
+
 
 1. Understanding TUN/TAP was not easy. 
     -> Best resource, slighlty hard to ingest but very good and thorugh.(https://backreference.org/2010/03/26/tuntap-interface-tutorial/)
@@ -29,3 +32,23 @@ A locally administered MAC address (LAA) is a MAC address where the second least
 15. nread returned from reading fd, is useful when writing to the fd.
 16. Unitialzed pointer variable is not a modifiable lvalue.
 17. Always use mecpy when copying arrays using ptrs.
+18. First time understood what do we actually mean by user space stack, and what
+    tun/tap interfaces are.
+    '''
+            Linux
+        192.168.0.254
+              ^
+              |
+             tap0
+              |
+              v
+            My Stack
+          192.168.0.1
+    '''
+    The ip link commands, set linux side ip addr and mac addr.
+    tun_alloc and my cl args, set the structure of my stacks ip addr and hwaddr.
+19. A tap interface acts as a bridge bw them, giving my program a fd, to read raw bytes, and make linux
+assume that it is communicating with another machine(on the same LAN).
+20. Eralier i was allocating same (ip, mac) to both. And then my prgraming was runnig but didnt gave correct output.
+21. Endianness is real bug creator, always need to pay attention, always print in host order for debugging.
+By this i meant, before sending data to wire keep it in host order -> print -> change to netwrok order -> send.

@@ -1,4 +1,4 @@
-#include "../include/tuntap_if.h"
+#include "../include/tuntap_alloc.h"
 #include "../include/ethernet.h"
 
 struct arp_hdr {

@@ -1,20 +1,49 @@
 #ifndef ARP_H
 #define ARP_H
+#define DEBUG_ARP
 
 #include "syshead.h"
 #include "ethernet.h"
 #include "time.h"
 #include "netdev.h"
+#include "utils.h"
 
 
 #define ARP_HDR_LEN sizeof(struct arp_hdr)
 #define ARP_DATA_LEN sizeof(struct arp_ipv4)
 
-#define ARP_ETHERNET    0x0001
-#define ARP_ETHERTYPE   0x0806
 #define ARP_IPV4        0x0800
 #define ARP_REQUEST     0x0001
 #define ARP_REPLY       0x0002
+
+#ifdef DEBUG_ARP
+#define arphdr_dbg(str, hdr)  \
+    do { \
+        print_dbg("arp hdr "str": (hwtype: %d, protype: %.04x, " \
+                    "hwlen: %d, prolen: %d, opcode: %.04x", \
+                    hdr->hwtype, hdr->protype, hdr->hwlen, \
+                    hdr->prolen, hdr->opcode); \
+    } while(0)
+
+
+#define arpdata_dbg(str, data)  \
+    do { \
+        print_dbg("arp data "str": (smac: %02x:%02x:%02x:%02x:%02x:%02x ," \
+                    "src_ip: %d.%d.%d.%d " \
+                    "dmac: %02x:%02x:%02x:%02x:%02x:%02x , " \
+                    "dest_ip: %d.%d.%d.%d ", \
+                    data->smac[0], data->smac[1], data->smac[2], \
+                    data->smac[3], data->smac[4], data->smac[5], \
+                    (data->src_ip >> 24) & 0xff, (data->src_ip >> 16) & 0xff, (data->src_ip >> 8) & 0xff, \
+                    (data->src_ip >> 0) & 0xff, data->dmac[0], data->dmac[1], \
+                    data->dmac[2], data->dmac[3], data->dmac[4], \
+                    data->dmac[5], (data->dest_ip >> 24) & 0xff, (data->dest_ip >> 16) & 0xff,\
+                    (data->dest_ip >> 8) & 0xff, (data->dest_ip >> 0) & 0xff); \
+    } while(0)
+#else
+#define arphdr_dbg(str, hdr)
+#define arpdata_dbg(str, data)
+#endif
 
 struct arp_hdr {
     uint16_t hwtype;     // Hardware type (Ethernet = 1)
@@ -44,6 +73,8 @@ struct arp_entry {
     int valid;
 };
 
+void arp_init();
+void arp_cache_init();
 void arp_recv(void *buffer, int len);
 void arp_reply(struct arp_hdr *arphdr, struct arp_ipv4 *arpdata, struct netdev *dev);
 int arp_cache_update(struct arp_hdr *arphdr, struct arp_ipv4 *arpdata);

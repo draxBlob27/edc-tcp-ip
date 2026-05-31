@@ -28,6 +28,11 @@ struct netdev *netdev_alloc(char *if_name, char *addr, char *hwaddr, uint32_t mt
 }
 
 struct netdev *netdev_get(uint32_t sip) {
+    // printf("%u.%u.%u.%u", \
+    //     (my_dev->addr >> 24) & 0xff, \
+    //     (my_dev->addr >> 16) & 0xff,\
+    //     (my_dev->addr >> 8)  & 0xff,\
+    //     my_dev->addr & 0xff);
     if (my_dev->addr == sip) {
         return my_dev;
     } else {

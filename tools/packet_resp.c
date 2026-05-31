@@ -13,6 +13,7 @@ int main(int argc, char* argv[]) {
     int tuntap_fd = netdev_init(tuntap_name, argv[2], argv[3]);
 
     printf("Successfully attached to %s. Waiting for data...\n", tuntap_name);
+    arp_init();
     while(1) {
         int nread = read(tuntap_fd,buffer,sizeof(buffer));
         if(nread < 0) {
@@ -22,6 +23,5 @@ int main(int argc, char* argv[]) {
         }
 
         parse_ethernet(buffer, nread);
-        arp_recv(buffer, nread);
     }
 }

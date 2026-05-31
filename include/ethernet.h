@@ -1,9 +1,26 @@
 #ifndef ETHERNET_H
 #define ETHERNET_H
+#define DEBUG_ETH
 
 #include "syshead.h"
 
 #define ETH_HDR_LEN sizeof(struct eth_hdr)
+#define ARP_ETHERNET    0x0001
+#define ARP_ETHERTYPE   0x0806
+
+#ifdef DEBUG_ETH
+#define ethhdr_dbg(str, hdr) \
+    do { \
+        printf("eth hdr: "str" dmac: %02x:%02x:%02x:%02x:%02x:%02x " \
+        "smac: %02x:%02x:%02x:%02x:%02x:%02x " \
+        "ethertype: 0x%04x\n", hdr->dst_mac[0], hdr->dst_mac[1], hdr->dst_mac[2], \
+        hdr->dst_mac[3], hdr->dst_mac[4], hdr->dst_mac[5], hdr->src_mac[0], \
+        hdr->src_mac[1], hdr->src_mac[2], hdr->src_mac[3], hdr->src_mac[4], \
+        hdr->src_mac[5], hdr->ethertype); \
+    } while(0) 
+#else
+#define ethhdr_dbg(str, hdr)
+#endif
 
 struct eth_hdr {
     uint8_t dst_mac[6]; 
