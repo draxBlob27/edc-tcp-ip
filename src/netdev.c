@@ -1,4 +1,7 @@
 #include "../include/netdev.h"
+#include "../include/arp.h"
+#include "../include/ethernet.h"
+#include "../include/utils.h"
 
 struct netdev *my_dev;
 
@@ -10,11 +13,8 @@ struct netdev *netdev_alloc(char *if_name, char *addr, char *hwaddr, uint32_t mt
       exit(1);
     }
 
-    dev->addr_len = 6;
-    if (inet_pton(AF_INET, addr, &dev->addr) != 1) {
-        perror("ERR: Parsing inet address failed");
-        exit(1);
-    }
+    dev->haddr_len = 6;
+    parse_ip(addr, &dev->addr);
 
     dev->addr = ntohl(dev->addr);
     sscanf(hwaddr, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx", &dev->hwaddr[0],

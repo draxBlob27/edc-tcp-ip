@@ -1,6 +1,8 @@
 #ifndef UTILS_H
 #define UTILS_H
+#include "arp.h"
 #include "netdev.h"
+#include "ethernet.h"
 
 #define print_dbg(str, ...) \
     printf(str" - %s:%u\n", ##__VA_ARGS__, __FILE__, __LINE__);
@@ -9,5 +11,7 @@
     fprintf(stderr, str, ##__VA_ARGS__);
 
 int tun_write(char *buff, int len, struct netdev *dev);
+char *construct_buffer(struct eth_hdr *ethhdr, struct arp_hdr *arphdr, struct arp_ipv4 *arpdata);
+void parse_ip(char *addr, uint32_t *dest);
 
 #endif

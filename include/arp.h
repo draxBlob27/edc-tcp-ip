@@ -6,15 +6,10 @@
 #include "ethernet.h"
 #include "time.h"
 #include "netdev.h"
-#include "utils.h"
 
-
-#define ARP_HDR_LEN sizeof(struct arp_hdr)
-#define ARP_DATA_LEN sizeof(struct arp_ipv4)
-
-#define ARP_IPV4        0x0800
-#define ARP_REQUEST     0x0001
-#define ARP_REPLY       0x0002
+#define ETH_HDR_LEN sizeof(struct eth_hdr)
+#define ARP_ETHERNET    0x0001
+#define ARP_ETHERTYPE   0x0806
 
 #ifdef DEBUG_ARP
 #define arphdr_dbg(str, hdr)  \
@@ -77,6 +72,7 @@ void arp_init();
 void arp_cache_init();
 void arp_recv(void *buffer, int len);
 void arp_reply(struct arp_hdr *arphdr, struct arp_ipv4 *arpdata, struct netdev *dev);
+void arp_request(const uint32_t dip, struct netdev *dev);
 int arp_cache_update(struct arp_hdr *arphdr, struct arp_ipv4 *arpdata);
 int arp_cache_insert(struct arp_hdr *arphdr, struct arp_ipv4 *arpdata);
 

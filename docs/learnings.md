@@ -3,8 +3,8 @@
 tap0 <ipaddr> = 192.168.0.1, <macaddr>
 tap1 <ipaddr> = 192.168.0.2, <macaddr>
 
-./scripts/setup_tap.sh tap0 192.168.0.1 02:11:22:33:44:55
-./scripts/setup_tap.sh tap1 192.168.0.2 02:AA:BB:CC:DD:EE
+./scripts/setup_linux.sh tap0 192.168.0.1 02:11:22:33:44:55
+./scripts/setup_mine.sh tap0 192.168.0.254 02:AA:BB:CC:DD:EE
 
 
 1. Understanding TUN/TAP was not easy. 
@@ -52,3 +52,4 @@ assume that it is communicating with another machine(on the same LAN).
 20. Eralier i was allocating same (ip, mac) to both. And then my prgraming was runnig but didnt gave correct output.
 21. Endianness is real bug creator, always need to pay attention, always print in host order for debugging.
 By this i meant, before sending data to wire keep it in host order -> print -> change to netwrok order -> send.
+22. Alsways keep in mind the above figure.

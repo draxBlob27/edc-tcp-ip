@@ -7,7 +7,6 @@ void parse_ethernet(void *buffer, int nread) {
     struct arp_hdr *arphdr = (struct arp_hdr *)(buffer + ETH_HDR_LEN);
     ethhdr->ethertype = ntohs(ethhdr->ethertype);
 
-    printf("\n");
     ethhdr_dbg("in ", ethhdr);
         
 

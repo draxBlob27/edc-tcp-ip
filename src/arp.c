@@ -1,9 +1,9 @@
 #include "../include/arp.h"
-#include "../include/netdev.h"
 #include "../include/utils.h"
 
 #define ARP_CACHE_SIZE 256
-const uint8_t LMAC[6] = {0x52, 0x54, 0x00, 0x12, 0x34, 0x56};
+const uint8_t broadcast_mac[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+const uint8_t request_mac[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 struct arp_entry *arp_entry[ARP_CACHE_SIZE];
 //In global scope all vals will be NULL at init.
@@ -65,11 +65,7 @@ void arp_reply(struct arp_hdr *arphdr, struct arp_ipv4 *arpdata, struct netdev *
     rep_arpdata->dest_ip = htonl(arpdata->src_ip);
     rep_arpdata->src_ip = htonl(dev->addr);
 
-    char *buffer = malloc(ETH_HDR_LEN + ARP_HDR_LEN + ARP_DATA_LEN);
-    memcpy(buffer, ethhdr, ETH_HDR_LEN);
-    memcpy(buffer + ETH_HDR_LEN, rep_arphdr, ARP_HDR_LEN);
-    memcpy(buffer + ETH_HDR_LEN + ARP_HDR_LEN, rep_arpdata, ARP_DATA_LEN);
-
+    char *buffer = construct_buffer(ethhdr, rep_arphdr, rep_arpdata);
     ret = tun_write(buffer, ETH_HDR_LEN + ARP_HDR_LEN + ARP_DATA_LEN, dev);
 }
 
@@ -111,10 +107,42 @@ void arp_recv(void *buffer, int len) {
 
     if (arphdr->opcode == ARP_REQUEST) {
         arp_reply(arphdr, arpdata, net_dev);
-    } else {
-        printf("ARP: Opcode not supported\n");
-        return;
+    } else if (arphdr->opcode == ARP_REPLY) {
+        printf("Got replied to request.\n");
     }
+}
+
+void arp_request(const uint32_t dip, struct netdev *dev) {
+    struct eth_hdr *ethhdr = malloc(ETH_HDR_LEN);
+    struct arp_hdr *arphdr = malloc(ARP_HDR_LEN);
+    struct arp_ipv4 *arpdata = malloc(ARP_DATA_LEN);
+
+    memcpy(ethhdr->dst_mac, broadcast_mac, dev->haddr_len);
+    memcpy(ethhdr->src_mac, dev->hwaddr, dev->haddr_len);
+    ethhdr->ethertype = ARP_ETHERTYPE;
+    ethhdr_dbg("req ", ethhdr);
+    ethhdr->ethertype = htons(ethhdr->ethertype);
+
+    arphdr->hwtype = ARP_ETHERNET;
+    arphdr->protype = ARP_IPV4;
+    arphdr->hwlen = dev->haddr_len;
+    arphdr->prolen = ARP_IPV4_LEN;
+    arphdr->opcode = ARP_REQUEST;
+    arphdr_dbg("req ", arphdr);
+    arphdr->hwtype = htons(arphdr->hwtype);
+    arphdr->protype = htons(arphdr->protype);
+    arphdr->opcode = htons(arphdr->opcode);
+
+    memcpy(arpdata->smac, dev->hwaddr, dev->haddr_len);
+    arpdata->src_ip = dev->addr;
+    memcpy(arpdata->dmac, request_mac, dev->haddr_len);
+    arpdata->dest_ip = dip;
+    arpdata_dbg("req ", arpdata);
+    arpdata->src_ip = htonl(arpdata->src_ip);
+    arpdata->dest_ip = htonl(arpdata->dest_ip);
+
+    char *buffer = construct_buffer(ethhdr, arphdr, arpdata);
+    int ret = tun_write(buffer, ETH_HDR_LEN + ARP_HDR_LEN + ARP_DATA_LEN, dev);
 }
 
 void arp_cache_init() {

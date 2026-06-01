@@ -6,7 +6,7 @@
 
 struct netdev {
     uint32_t addr;
-    uint8_t addr_len;
+    uint8_t haddr_len;
     uint8_t hwaddr[6];
     uint32_t mtu;
     int fd;
