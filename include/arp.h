@@ -7,9 +7,17 @@
 #include "time.h"
 #include "netdev.h"
 
-#define ETH_HDR_LEN sizeof(struct eth_hdr)
 #define ARP_ETHERNET    0x0001
-#define ARP_ETHERTYPE   0x0806
+
+
+#define ARP_IPV4        0x0800
+#define ARP_REQUEST     0x0001
+#define ARP_REPLY       0x0002
+
+#define ARP_IPV4_LEN    0x0004
+
+#define ARP_HDR_LEN sizeof(struct arp_hdr)
+#define ARP_DATA_LEN sizeof(struct arp_ipv4)
 
 #ifdef DEBUG_ARP
 #define arphdr_dbg(str, hdr)  \

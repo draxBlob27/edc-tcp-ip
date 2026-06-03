@@ -53,3 +53,7 @@ assume that it is communicating with another machine(on the same LAN).
 21. Endianness is real bug creator, always need to pay attention, always print in host order for debugging.
 By this i meant, before sending data to wire keep it in host order -> print -> change to netwrok order -> send.
 22. Alsways keep in mind the above figure.
+23. Valgrind shows a hell lot of memory leaks, which i expected. Will need to fix those. 100KB of 
+memory leaked while running stack for < 10secs
+24. ipv4 header info(https://datatracker.ietf.org/doc/html/rfc791#section-3.1)
+

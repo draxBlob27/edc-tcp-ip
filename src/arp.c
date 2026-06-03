@@ -79,12 +79,12 @@ void arp_recv(void *buffer, int len) {
     arphdr_dbg("in", arphdr);
 
     if (arphdr->hwtype != ARP_ETHERNET) {
-        printf("ARP: Unsupported HW type\n");
+        print_err("ARP: Unsupported HW type\n");
         return;
     }
     
     if (arphdr->protype != ARP_IPV4) {
-        printf("ARP: Unsupported protocol\n");
+        print_err("ARP: Unsupported protocol\n");
         return;
     }
 
@@ -96,12 +96,12 @@ void arp_recv(void *buffer, int len) {
 
     merge = arp_cache_update(arphdr, arpdata);
     if (!(net_dev = netdev_get(arpdata->dest_ip))) {
-        printf("ARP was not for us.\n");
+        print_err("ARP was not for us.\n");
         return;
     }
 
     if ((!merge && arp_cache_insert(arphdr, arpdata)) != 0) {
-        perror("ERR: No free space in ARP translation table\n");
+        print_err("ERR: No free space in ARP translation table\n");
         return;
     }
 

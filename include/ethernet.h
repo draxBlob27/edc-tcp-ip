@@ -4,14 +4,8 @@
 
 #include "syshead.h"
 
-#define ARP_HDR_LEN sizeof(struct arp_hdr)
-#define ARP_DATA_LEN sizeof(struct arp_ipv4)
-
-#define ARP_IPV4        0x0800
-#define ARP_REQUEST     0x0001
-#define ARP_REPLY       0x0002
-
-#define ARP_IPV4_LEN    0x0004
+#define ARP_ETHERTYPE   0x0806
+#define ETH_HDR_LEN sizeof(struct eth_hdr)
 
 #ifdef DEBUG_ETH
 #define ethhdr_dbg(str, hdr) \
