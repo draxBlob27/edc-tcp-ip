@@ -37,8 +37,8 @@ struct ipv4_hdr {
     uint8_t data[];
 } __attribute__((packed));
 
-uint16_t ipv4_checksum(void *addr, size_t count);
+uint16_t internet_checksum(void *addr, size_t count);
 void ipv4_recv(char *buffer, size_t len);
-void ipv4_send(uint32_t dip, uint8_t protocol, char *payload, size_t len);
+void ipv4_send(uint32_t dip, uint8_t protocol, char *buffer, size_t len);
 
 #endif //IPV4_H

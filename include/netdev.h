@@ -2,7 +2,7 @@
 #define NETDEV_H
 
 #include "syshead.h"
-#include "tuntap_alloc.h"
+#include "skbuff.h"
 
 struct netdev {
     uint32_t addr;
@@ -15,5 +15,6 @@ struct netdev {
 struct netdev *netdev_alloc(char *if_name, char *addr, char *hwaddr, uint32_t mtu);
 int netdev_init(char *if_name, char *addr, char *hwaddr);
 struct netdev *netdev_get(uint32_t src_ip);
+int netdev_transmit(struct sk_buff *skb, struct netdev *dev);
 
 #endif //NETDEV_H

@@ -1,7 +1,7 @@
 #include "../include/utils.h"
 
-int tun_write(char *buff, int len, struct netdev *dev) {
-    return write(dev->fd, buff, len);
+int tun_write(char *buff, int len, int fd) {
+    return write(fd, buff, len);
 }
 
 char* construct_buffer(struct eth_hdr *ethhdr, struct arp_hdr *arphdr, struct arp_ipv4 *arpdata) {

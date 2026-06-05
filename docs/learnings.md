@@ -57,3 +57,26 @@ By this i meant, before sending data to wire keep it in host order -> print -> c
 memory leaked while running stack for < 10secs
 24. ipv4 header info(https://datatracker.ietf.org/doc/html/rfc791#section-3.1)
 
+25. While writing ping repsonse. I found the need to eliminate frequent and redundant copying of buffer
+data to different structs. From there i got to learn about socket buffers used in linux.
+26. Implementing a socket buffer DS was my next goal.
+27. About sk_buff :     +-----------------------------------------+
+                        |  Headroom  |    Packet Data    |Tailroom|
+                        +-----------------------------------------+
+                        ^            ^                   ^        ^
+                        |            |                   |        |
+          skb->head ----+            |                   |        |
+          skb->data -----------------+                   |        |
+          skb->tail -------------------------------------+        |
+          skb->end -----------------------------------------------+
+
+-> suppose data is travelling down the stack. when it reachesip layer, ip layer is going to add its header
+info, instead of copying the buffer, the headroom is shrunked and data pointer is moved backwards.
+-> and so on for link layer
+-> while travelling up the stack, the required header is read and headroom is expanded. Eliminating the need
+of copying data every time.
+
+28. while refactoring my packet dujmper, i was freeing only the sb_buff structure, which aused memory as 
+underlying buffer was not getting freed. soln was to free(skb->head) as well.
+?? why not skb->data, because these pointers move while traversing the stack. head remains where it started.
+

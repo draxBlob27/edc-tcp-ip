@@ -3,6 +3,7 @@
 #define DEBUG_ETH
 
 #include "syshead.h"
+#include "skbuff.h"
 
 #define ARP_ETHERTYPE   0x0806
 #define ETH_HDR_LEN sizeof(struct eth_hdr)
@@ -28,6 +29,6 @@ struct eth_hdr {
     uint8_t payload[];
 } __attribute__((packed));
 
-void parse_ethernet(void *buffer, int nread);
+void parse_ethernet(struct sk_buff *skb, int nread);
 
 #endif //ETHERNET_H

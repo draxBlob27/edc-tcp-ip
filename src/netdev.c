@@ -2,6 +2,7 @@
 #include "../include/arp.h"
 #include "../include/ethernet.h"
 #include "../include/utils.h"
+#include "../include/tuntap_alloc.h"
 
 struct netdev *my_dev;
 
@@ -38,6 +39,10 @@ struct netdev *netdev_get(uint32_t sip) {
     } else {
         return NULL;
     }
+}
+
+int netdev_transmit(struct sk_buff *skb, struct netdev *dev) {
+    tun_write(skb->data, skb->len, dev->fd);
 }
 
 int netdev_init(char *if_name, char *addr, char *hwaddr) {
