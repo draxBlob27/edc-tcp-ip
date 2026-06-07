@@ -2,10 +2,10 @@
 #include "../include/ethernet.h"
 #include "../include/netdev.h"
 #include "../include/arp.h"
-
+#include "../include/ipv4.h"
+#include "../include/icmpv4.h"
 /*
-    Parses ehternet frames and if message is arp_request, replies it with self mac addr, and adds
-    sender mac addr into its cache.
+    replies to a ping, if sender mac address not availbel request and tells upper layer to try again.
 */
 int main(int argc, char* argv[]) {
     char tuntap_name[IFNAMSIZ];
@@ -45,8 +45,8 @@ int main(int argc, char* argv[]) {
 
         if (ethhdr->ethertype == ARP_ETHERTYPE) {//ARPING
             arp_recv(skb, nread);
-        } else if (ethhdr->ethertype == 0x0800) {//IPv4
-            printf("Ipv4 address\n");
+        } else if (ethhdr->ethertype == ARP_IPV4) {//IPv4
+            ipv4_recv(skb, nread);
         } else {
             printf("Ipv6 or corrupted\n");
         }

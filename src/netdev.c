@@ -43,6 +43,7 @@ struct netdev *netdev_get(uint32_t sip) {
 
 int netdev_transmit(struct sk_buff *skb, struct netdev *dev) {
     tun_write(skb->data, skb->len, dev->fd);
+    free_skb(skb);
 }
 
 int netdev_init(char *if_name, char *addr, char *hwaddr) {

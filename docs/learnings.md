@@ -80,3 +80,4 @@ of copying data every time.
 underlying buffer was not getting freed. soln was to free(skb->head) as well.
 ?? why not skb->data, because these pointers move while traversing the stack. head remains where it started.
 
+29. I had 

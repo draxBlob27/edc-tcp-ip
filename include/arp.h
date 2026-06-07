@@ -83,5 +83,5 @@ void arp_reply(struct sk_buff *skb, struct netdev *dev);
 void arp_request(const uint32_t dip, struct netdev *dev);
 int arp_cache_update(struct arp_hdr *arphdr, struct arp_ipv4 *arpdata);
 int arp_cache_insert(struct arp_hdr *arphdr, struct arp_ipv4 *arpdata);
-
+uint8_t *arp_get_hwaddr(uint32_t sip);
 #endif //ARP_H

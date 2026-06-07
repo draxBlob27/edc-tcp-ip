@@ -44,9 +44,8 @@ int main(int argc, char* argv[]) {
         }
 
         struct eth_hdr *ethhdr = (struct eth_hdr *)skb->data;
-        skb_pull(skb, ETH_HDR_LEN);
 
-        struct arp_hdr *arphdr = (struct arp_hdr *)skb->data;
+        struct arp_hdr *arphdr = (struct arp_hdr *)(skb->data + ETH_HDR_LEN);
         ethhdr->ethertype = ntohs(ethhdr->ethertype);
 
         ethhdr_dbg("in ", ethhdr);
@@ -58,7 +57,5 @@ int main(int argc, char* argv[]) {
         } else {
             printf("Ipv6 or corrupted\n");
         }
-
-        free_skb(skb);
     }
 }
