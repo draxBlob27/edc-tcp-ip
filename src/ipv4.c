@@ -58,31 +58,48 @@ void ipv4_recv(struct sk_buff *skb, size_t len) {
 
     ipv4hdr_dbg("in ", ipv4hdr);
 
+    ipv4hdr->len = htons(ipv4hdr->len);
+    ipv4hdr->id = htons(ipv4hdr->id);
+    ipv4hdr->frag_offset = htons(ipv4hdr->frag_offset);
+    ipv4hdr->hdr_csum = htons(ipv4hdr->hdr_csum);
+    ipv4hdr->src_addr = htonl(ipv4hdr->src_addr);
+    ipv4hdr->dest_addr = htonl(ipv4hdr->dest_addr);
+
     if (ipv4hdr->protocol == ICMPV4) {
         icmpv4_recv(skb, len, net_dev);
-        return;
     } else {
         print_err("IPV4: Not an ICMP msg.\n");
     }
 }
 
-int ipv4_reply(uint32_t dip, uint8_t protocol, struct sk_buff *skb, size_t len, struct netdev *dev) {
+int ipv4_reply(uint32_t dip/*in netwrok order*/, uint8_t protocol, struct sk_buff *skb, size_t len, struct netdev *dev) {
     struct ipv4_hdr *ipv4hdr = (struct ipv4_hdr *)(skb->data + ETH_HDR_LEN);
-    //all of ipv4 hdr in host order
+    //all of ipv4 hdr in network order
 
+    ipv4hdr->len = ntohs(ipv4hdr->len);
+    ipv4hdr->id = ntohs(ipv4hdr->id);
+    ipv4hdr->frag_offset = ntohs(ipv4hdr->frag_offset);
+    ipv4hdr->hdr_csum = ntohs(ipv4hdr->hdr_csum);
     ipv4hdr->src_addr = dev->addr;//in host order
-    ipv4hdr->dest_addr = dip; //in host order
+    ipv4hdr->dest_addr = ntohl(dip); //in host order
 
     ipv4hdr_dbg("out ", ipv4hdr);
 
+    ipv4hdr->len = htons(ipv4hdr->len);
+    ipv4hdr->id = htons(ipv4hdr->id);
+    ipv4hdr->frag_offset = htons(ipv4hdr->frag_offset);
+    ipv4hdr->hdr_csum = htons(ipv4hdr->hdr_csum);
     ipv4hdr->src_addr = htonl(ipv4hdr->src_addr);//in netowrk order
     ipv4hdr->dest_addr = htonl(ipv4hdr->dest_addr); //in network order
+
     ipv4hdr->hdr_csum = 0;
     ipv4hdr->hdr_csum = internet_checksum(ipv4hdr, ipv4hdr->ihl * 4); //in network order;
 
-    uint8_t *dmac = arp_get_hwaddr(dip);
+    uint8_t *dmac = arp_get_hwaddr(ntohl(dip));
     if (!dmac) {
-        arp_request(dip, dev);
+        if (arp_request(dip, dev) != -1) {
+            printf("IPV4 -> ARP: Got requested to reply.");
+        };
         printf("Retry again\n");
         return -1;
     }

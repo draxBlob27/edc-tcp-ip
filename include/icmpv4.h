@@ -35,4 +35,5 @@ struct icmpv4_hdr {
 
 void icmpv4_recv(struct sk_buff *skb, size_t len, struct netdev *dev);
 void icmpv4_reply(struct sk_buff *skb, size_t len, struct netdev *dev);
+int icmpv4_request(const uint32_t dip, struct netdev *dev);
 #endif //ICMPV4_H

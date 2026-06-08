@@ -6,6 +6,7 @@
 #include "ethernet.h"
 #include "time.h"
 #include "netdev.h"
+#include "skbuff.h"
 
 #define ARP_ETHERNET    0x0001
 
@@ -80,7 +81,7 @@ void arp_init();
 void arp_cache_init();
 void arp_recv(struct sk_buff *skb, int len);
 void arp_reply(struct sk_buff *skb, struct netdev *dev);
-void arp_request(const uint32_t dip, struct netdev *dev);
+int arp_request(const uint32_t dip, struct netdev *dev);
 int arp_cache_update(struct arp_hdr *arphdr, struct arp_ipv4 *arpdata);
 int arp_cache_insert(struct arp_hdr *arphdr, struct arp_ipv4 *arpdata);
 uint8_t *arp_get_hwaddr(uint32_t sip);

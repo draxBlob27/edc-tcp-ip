@@ -11,7 +11,6 @@
     fprintf(stderr, str, ##__VA_ARGS__);
 
 int tun_write(char *buff, int len, int fd);
-char *construct_buffer(struct eth_hdr *ethhdr, struct arp_hdr *arphdr, struct arp_ipv4 *arpdata);
 void parse_ip(char *addr, uint32_t *dest);
 
 #endif
