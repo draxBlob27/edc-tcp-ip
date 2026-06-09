@@ -82,6 +82,7 @@ int ipv4_reply(uint32_t dip/*in netwrok order*/, uint8_t protocol, struct sk_buf
     ipv4hdr->hdr_csum = ntohs(ipv4hdr->hdr_csum);
     ipv4hdr->src_addr = dev->addr;//in host order
     ipv4hdr->dest_addr = ntohl(dip); //in host order
+    ipv4hdr->protocol = protocol;
 
     ipv4hdr_dbg("out ", ipv4hdr);
 
@@ -98,8 +99,9 @@ int ipv4_reply(uint32_t dip/*in netwrok order*/, uint8_t protocol, struct sk_buf
     uint8_t *dmac = arp_get_hwaddr(ntohl(dip));
     if (!dmac) {
         if (arp_request(dip, dev) != -1) {
-            printf("IPV4 -> ARP: Got requested to reply.");
+            printf("IPV4: Sent ARP Request.\n");
         };
+        
         printf("Retry again\n");
         return -1;
     }

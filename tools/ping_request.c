@@ -26,10 +26,10 @@ int main(int argc, char* argv[]) {
     // *dest_ip = ntohl(*dest_ip);
 
     printf("Successfully attached to %s. Waiting for data...\n", tuntap_name);
+
     arp_init();
 
-    
-
+    icmpv4_request(*dest_ip, dev);    
     while(1) {
         struct sk_buff *skb = skbuff_alloc(2048);
         int nread = read(tuntap_fd, skb->data, 2048);
@@ -40,8 +40,6 @@ int main(int argc, char* argv[]) {
             close(tuntap_fd);
             exit(1);
         }
-        
-        icmpv4_request(*dest_ip, dev);
         
         struct eth_hdr *ethhdr = (struct eth_hdr *)(skb->data);
         ethhdr->ethertype = ntohs(ethhdr->ethertype);
@@ -54,6 +52,13 @@ int main(int argc, char* argv[]) {
             ipv4_recv(skb, nread);
         } else {
             printf("Ipv6 or corrupted\n");
+        }
+
+        // sleep(4);
+
+        uint8_t *dmac = arp_get_hwaddr(ntohl(*dest_ip));
+        if (dmac) {
+            icmpv4_request(*dest_ip, dev);
         }
 
         free_skb(skb);

@@ -117,7 +117,7 @@ void arp_recv(struct sk_buff *skb, int len) {
     if (arphdr->opcode == ARP_REQUEST) {
         arp_reply(skb, net_dev);
     } else if (arphdr->opcode == ARP_REPLY) {
-        printf("Got replied to request.\n");
+        printf("🎉 Got replied to ARP request.\n");
     }
 }
 
