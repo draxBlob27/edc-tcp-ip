@@ -2,4 +2,6 @@ build/
 *.py
 .vscode/
 others/
-*.txt
+*.txtdocs/further_desgin.md
+log_ping.txt
+docs/further_desgin.md

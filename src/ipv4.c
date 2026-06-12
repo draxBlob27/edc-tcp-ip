@@ -4,8 +4,9 @@
 #include "../include/arp.h"
 #include "../include/utils.h"
 
-uint16_t internet_checksum(void *addr, size_t count) {
-    uint64_t csum = 0;
+uint16_t internet_checksum(void *addr, size_t count, uint64_t st_sum) {
+    //assumes underlying data is in network order.
+    uint64_t csum = st_sum;
     uint8_t *p = addr;
     while(count > 1) {
         csum += *(uint16_t *)p;
@@ -43,7 +44,7 @@ void ipv4_recv(struct sk_buff *skb, size_t len) {
         return;
     }
 
-    uint16_t recv_csum = internet_checksum(ipv4hdr, ipv4hdr->ihl * 4);
+    uint16_t recv_csum = internet_checksum(ipv4hdr, ipv4hdr->ihl * 4, 0);
     if (recv_csum != 0) {
         print_err("IPV4: Datagram invalidated.\n");
         return;
@@ -94,7 +95,7 @@ int ipv4_reply(uint32_t dip/*in netwrok order*/, uint8_t protocol, struct sk_buf
     ipv4hdr->dest_addr = htonl(ipv4hdr->dest_addr); //in network order
 
     ipv4hdr->hdr_csum = 0;
-    ipv4hdr->hdr_csum = internet_checksum(ipv4hdr, ipv4hdr->ihl * 4); //in network order;
+    ipv4hdr->hdr_csum = internet_checksum(ipv4hdr, ipv4hdr->ihl * 4, 0); //in network order;
 
     uint8_t *dmac = arp_get_hwaddr(ntohl(dip));
     if (!dmac) {

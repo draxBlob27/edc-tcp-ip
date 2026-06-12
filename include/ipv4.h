@@ -41,7 +41,7 @@ struct ipv4_hdr {
     uint8_t data[];
 } __attribute__((packed));
 
-uint16_t internet_checksum(void *addr, size_t count);
+uint16_t internet_checksum(void *addr, size_t count, uint64_t st_sum);
 void ipv4_recv(struct sk_buff *skb, size_t len);
 int ipv4_reply(uint32_t dip, uint8_t protocol, struct sk_buff *skb, size_t len, struct netdev *dev);
 
