@@ -7,7 +7,6 @@
 #include "netdev.h"
 
 #define ICMPV4_HDR_LEN sizeof(struct icmpv4_hdr)
-#define ICMPV4 0x01
 #define ECHO_REQUEST 0x08
 #define ECHO_REPLY 0
 

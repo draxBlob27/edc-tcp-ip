@@ -30,5 +30,7 @@ struct eth_hdr {
 } __attribute__((packed));
 
 void parse_ethernet(struct sk_buff *skb, int nread);
+int ethernet_reply(uint8_t *dst_mac, uint8_t *src_mac, uint16_t ethertype,\
+     struct netdev *dev, struct sk_buff *skb, size_t len);
 
 #endif //ETHERNET_H

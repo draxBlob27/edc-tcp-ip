@@ -1,6 +1,5 @@
 #include "../include/ipv4.h"
 #include "../include/icmpv4.h"
-#include "../include/ethernet.h"
 #include "../include/arp.h"
 #include "../include/utils.h"
 
@@ -75,12 +74,15 @@ void ipv4_recv(struct sk_buff *skb, size_t len) {
 
 int ipv4_reply(uint32_t dip/*in netwrok order*/, uint8_t protocol, struct sk_buff *skb, size_t len, struct netdev *dev) {
     struct ipv4_hdr *ipv4hdr = (struct ipv4_hdr *)(skb->data + ETH_HDR_LEN);
-    //all of ipv4 hdr in network order
 
-    ipv4hdr->len = ntohs(ipv4hdr->len);
-    ipv4hdr->id = ntohs(ipv4hdr->id);
-    ipv4hdr->frag_offset = ntohs(ipv4hdr->frag_offset);
-    ipv4hdr->hdr_csum = ntohs(ipv4hdr->hdr_csum);
+    ipv4hdr->ihl = 5;
+    ipv4hdr->version = IPV4;
+    ipv4hdr->tos = 0;
+    ipv4hdr->len = IPV4_HDR_LEN + len; //host order
+    ipv4hdr->id = 0x0101; //host order
+    ipv4hdr->frag_offset = 0x4000; //host order
+    ipv4hdr->ttl = 64;
+    ipv4hdr->hdr_csum = 0;
     ipv4hdr->src_addr = dev->addr;//in host order
     ipv4hdr->dest_addr = ntohl(dip); //in host order
     ipv4hdr->protocol = protocol;
@@ -107,13 +109,6 @@ int ipv4_reply(uint32_t dip/*in netwrok order*/, uint8_t protocol, struct sk_buf
         return -1;
     }
 
-    struct eth_hdr *ethhdr = (struct eth_hdr *)skb->data; //ethhertype in host order as alreay swapped at main
-    memcpy(ethhdr->dst_mac, dmac, 6); 
-    memcpy(ethhdr->src_mac, dev->hwaddr, 6);
-
-    ethhdr_dbg("out ", ethhdr);
-    ethhdr->ethertype = htons(ethhdr->ethertype);
-
-    int ret = netdev_transmit(skb, dev);
-    return ret;
+    skb_push(skb, ETH_HDR_LEN);
+    return ethernet_reply(dmac, dev->hwaddr, ARP_IPV4, dev, skb, IPV4_HDR_LEN + len);
 }

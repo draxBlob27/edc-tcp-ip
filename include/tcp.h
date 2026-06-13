@@ -2,6 +2,8 @@
 #define TCP_H
 
 #include "syshead.h"
+#include "ethernet.h"
+#include "ipv4.h"
 
 #define FIN 0x01 //000001
 #define SYN 0x02 //000010
@@ -13,6 +15,8 @@
 #define TCP_SEND_BUF_SIZE 32
 #define TCP_RECV_BUF_SIZE 32
 #define MAX_CONNECTIONS 64
+
+#define SENDER_WINDOW_LEN 12
 
 #define TCP_HDR_LEN sizeof(struct tcp_hdr)
 
@@ -76,28 +80,44 @@ struct tcp_conn {
 
     enum tcp_state state;
 
-    uint32_t snd_una;
-    uint32_t snd_nxt;
-    uint16_t snd_wnd;
-    uint32_t rcv_nxt;
-    uint16_t rcv_wnd;
+    uint32_t snd_una; /*oldest unacknowledged sequence number*/
+    uint32_t snd_nxt; /*next sequence number to be sent*/
+    uint16_t snd_wnd; /*send window*/
+    uint32_t rcv_nxt; /*next sequence number expected on an incoming segments, and
+        is the left or lower edge of the receive window*/
+    uint16_t rcv_wnd; /*receive window*/
 
     uint8_t send_buffer[TCP_SEND_BUF_SIZE];
     uint8_t recv_buffer[TCP_RECV_BUF_SIZE];
 
-    size_t recv_len;
-    size_t send_len;
+    size_t recv_len; 
+    size_t send_len; 
+};
+
+struct tcp_port_info {
+    int valid;
+    uint16_t port_no;
+    enum tcp_state state;
 };
 
 struct tcp_conn *connections[MAX_CONNECTIONS];
+struct tcp_port_info *ports[MAX_CONNECTIONS];
 
 uint16_t tcp_checksum(struct tcp_pseudo_hdr *tcp_pseudohdr, struct sk_buff *skb);
 struct tcp_conn *tcp_conn_find(uint32_t src_ip, uint32_t dest_ip, \
     uint32_t src_port, uint32_t dest_port);
 struct tcp_conn *tcp_conn_new(uint32_t src_ip, uint32_t dest_ip, \
     uint32_t src_port, uint32_t dest_port);
+
+static inline struct tcp_hdr *tcp_header(struct sk_buff *skb) {
+    return (struct tcp_hdr *)(skb->data + ETH_HDR_LEN + IPV4_HDR_LEN);
+}
+
+uint32_t tcp_listen(uint16_t port_number);
 void tcp_recv();
+void tcp_syn_ack(struct tcp_conn *conn);
 void tcp_process();
 void tcp_send_segment();
 void generate_isn();
+
 #endif //TCP_H

@@ -76,20 +76,5 @@ int icmpv4_request(const uint32_t dip/*in network order*/, struct netdev *dev) {
     icmpv4hdr->checksum = internet_checksum(icmpv4hdr, 64, 0);
 
     skb_push(req_skb, IPV4_HDR_LEN);
-    struct ipv4_hdr *ipv4hdr = (struct ipv4_hdr *)req_skb->data;
-    ipv4hdr->version = IPV4;
-    ipv4hdr->ihl = 5;
-    ipv4hdr->tos = 0;
-    ipv4hdr->ttl = 64;
-    ipv4hdr->frag_offset = htons(0x4000);
-    ipv4hdr->id = htons(0x0101);
-    ipv4hdr->flags = 0;
-    ipv4hdr->len = htons(IPV4_HDR_LEN + ICMPV4_HDR_LEN + 56);
-
-    skb_push(req_skb, ETH_HDR_LEN);
-    struct eth_hdr *ethhdr = (struct eth_hdr *)req_skb->data;
-    ethhdr->ethertype = ARP_IPV4;
-    int ret = ipv4_reply(dip, ICMPV4, req_skb, 2048, dev);
-    free_skb(req_skb);
-    return ret;
+    return ipv4_reply(dip, ICMPV4, req_skb, ICMPV4_HDR_LEN + 56, dev);
 }

@@ -5,9 +5,12 @@
 #include "syshead.h"
 #include "skbuff.h"
 #include "netdev.h"
+#include "ethernet.h"
 
 #define IPV4_HDR_LEN sizeof(struct ipv4_hdr)
 #define IPV4 0x04
+#define IPV4_TCP 0x06
+#define ICMPV4 0x0
 
 #ifdef DEBUG_IPV4
 #define ipv4hdr_dbg(msg, hdr) \
@@ -41,6 +44,9 @@ struct ipv4_hdr {
     uint8_t data[];
 } __attribute__((packed));
 
+static inline struct ipv4_hdr *ipv4_header(struct sk_buff *skb) {
+    return (struct tcp_hdr *)(skb->data + ETH_HDR_LEN);
+}
 uint16_t internet_checksum(void *addr, size_t count, uint64_t st_sum);
 void ipv4_recv(struct sk_buff *skb, size_t len);
 int ipv4_reply(uint32_t dip, uint8_t protocol, struct sk_buff *skb, size_t len, struct netdev *dev);

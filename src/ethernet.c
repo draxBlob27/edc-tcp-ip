@@ -20,3 +20,15 @@ void parse_ethernet(struct sk_buff *skb, int nread) {
 
     free_skb(skb);
 }
+
+int ethernet_reply(uint8_t *dst_mac, uint8_t *src_mac, uint16_t ethertype,\
+     struct netdev *dev, struct sk_buff *skb, size_t len) {
+        struct eth_hdr *ethhdr = (struct eth_hdr *)skb->data;
+        memcpy(ethhdr->dst_mac, dst_mac, 6);
+        memcpy(ethhdr->src_mac, src_mac, 6);
+        ethhdr->ethertype = ethertype; //in host order
+
+        ethhdr_dbg("out ", ethhdr);
+        ethhdr->ethertype = htons(ethhdr->ethertype);
+        int ret = netdev_transmit(skb, dev);
+    }
