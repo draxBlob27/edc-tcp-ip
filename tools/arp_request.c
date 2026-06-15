@@ -27,9 +27,9 @@ int main(int argc, char* argv[]) {
     arp_init();
 
     struct netdev *dev = netdev_get(*src_ip);
+    struct sk_buff *skb = skbuff_alloc(2048);
     
     while(1) {
-        struct sk_buff *skb = skbuff_alloc(2048);
         int nread = read(tuntap_fd, skb->data, 2048);
         skb->tail += nread;
         skb->len = nread;
@@ -52,7 +52,5 @@ int main(int argc, char* argv[]) {
         } else {
             printf("Ipv6 or corrupted\n");
         }
-        
-        free_skb(skb);
     }
 }

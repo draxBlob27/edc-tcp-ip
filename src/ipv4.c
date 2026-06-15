@@ -25,7 +25,7 @@ uint16_t internet_checksum(void *addr, size_t count, uint64_t st_sum) {
 }
 
 void ipv4_recv(struct sk_buff *skb, size_t len) {
-    struct ipv4_hdr *ipv4hdr = (struct ipv4_hdr *)(skb->data + ETH_HDR_LEN); //network order
+    struct ipv4_hdr *ipv4hdr = ipv4_header(skb); //network order
     struct netdev *net_dev;
     
     if (ipv4hdr->version != IPV4) {
@@ -51,7 +51,7 @@ void ipv4_recv(struct sk_buff *skb, size_t len) {
 
     ipv4hdr->len = ntohs(ipv4hdr->len);
     ipv4hdr->id = ntohs(ipv4hdr->id);
-    ipv4hdr->frag_offset = ntohs(ipv4hdr->frag_offset);
+    ipv4hdr->flags_and_frag_offset = ntohs(ipv4hdr->flags_and_frag_offset);
     ipv4hdr->hdr_csum = ntohs(ipv4hdr->hdr_csum);
     ipv4hdr->src_addr = ntohl(ipv4hdr->src_addr);
     ipv4hdr->dest_addr = ntohl(ipv4hdr->dest_addr);
@@ -60,7 +60,7 @@ void ipv4_recv(struct sk_buff *skb, size_t len) {
 
     ipv4hdr->len = htons(ipv4hdr->len);
     ipv4hdr->id = htons(ipv4hdr->id);
-    ipv4hdr->frag_offset = htons(ipv4hdr->frag_offset);
+    ipv4hdr->flags_and_frag_offset = htons(ipv4hdr->flags_and_frag_offset);
     ipv4hdr->hdr_csum = htons(ipv4hdr->hdr_csum);
     ipv4hdr->src_addr = htonl(ipv4hdr->src_addr);
     ipv4hdr->dest_addr = htonl(ipv4hdr->dest_addr);
@@ -73,14 +73,14 @@ void ipv4_recv(struct sk_buff *skb, size_t len) {
 }
 
 int ipv4_reply(uint32_t dip/*in netwrok order*/, uint8_t protocol, struct sk_buff *skb, size_t len, struct netdev *dev) {
-    struct ipv4_hdr *ipv4hdr = (struct ipv4_hdr *)(skb->data + ETH_HDR_LEN);
+    struct ipv4_hdr *ipv4hdr = ipv4_header(skb);
 
     ipv4hdr->ihl = 5;
     ipv4hdr->version = IPV4;
     ipv4hdr->tos = 0;
     ipv4hdr->len = IPV4_HDR_LEN + len; //host order
     ipv4hdr->id = 0x0101; //host order
-    ipv4hdr->frag_offset = 0x4000; //host order
+    ipv4hdr->flags_and_frag_offset = 0x4000; //host order
     ipv4hdr->ttl = 64;
     ipv4hdr->hdr_csum = 0;
     ipv4hdr->src_addr = dev->addr;//in host order
@@ -91,7 +91,7 @@ int ipv4_reply(uint32_t dip/*in netwrok order*/, uint8_t protocol, struct sk_buf
 
     ipv4hdr->len = htons(ipv4hdr->len);
     ipv4hdr->id = htons(ipv4hdr->id);
-    ipv4hdr->frag_offset = htons(ipv4hdr->frag_offset);
+    ipv4hdr->flags_and_frag_offset = htons(ipv4hdr->flags_and_frag_offset);
     ipv4hdr->hdr_csum = htons(ipv4hdr->hdr_csum);
     ipv4hdr->src_addr = htonl(ipv4hdr->src_addr);//in netowrk order
     ipv4hdr->dest_addr = htonl(ipv4hdr->dest_addr); //in network order
@@ -109,6 +109,5 @@ int ipv4_reply(uint32_t dip/*in netwrok order*/, uint8_t protocol, struct sk_buf
         return -1;
     }
 
-    skb_push(skb, ETH_HDR_LEN);
     return ethernet_reply(dmac, dev->hwaddr, ARP_IPV4, dev, skb, IPV4_HDR_LEN + len);
 }

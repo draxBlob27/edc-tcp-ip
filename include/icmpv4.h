@@ -5,6 +5,7 @@
 #include "syshead.h"
 #include "skbuff.h"
 #include "netdev.h"
+#include "ipv4.h"
 
 #define ICMPV4_HDR_LEN sizeof(struct icmpv4_hdr)
 #define ECHO_REQUEST 0x08
@@ -35,4 +36,7 @@ struct icmpv4_hdr {
 void icmpv4_recv(struct sk_buff *skb, size_t len, struct netdev *dev);
 void icmpv4_reply(struct sk_buff *skb, size_t len, struct netdev *dev);
 int icmpv4_request(const uint32_t dip, struct netdev *dev);
+static inline struct icmpv4_hdr *icmpv4_header(struct sk_buff *skb) {
+    return (struct icmpv4_hdr *)(skb->data + ETH_HDR_LEN + IPV4_HDR_LEN);
+}
 #endif //ICMPV4_H

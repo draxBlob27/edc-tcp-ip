@@ -3,8 +3,8 @@
 #include "../include/netdev.h"
 
 #define ARP_CACHE_SIZE 256
-const uint8_t broadcast_mac[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
-const uint8_t request_mac[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+uint8_t broadcast_mac[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+uint8_t request_mac[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 struct arp_entry *arp_entry[ARP_CACHE_SIZE];
 //In global scope all vals will be NULL at init.
@@ -46,7 +46,7 @@ int arp_cache_insert(struct arp_hdr *arphdr, struct arp_ipv4 *arpdata) {
     return 1;
 }
 
-void arp_reply(struct sk_buff *skb, struct netdev *dev) {
+int arp_reply(struct sk_buff *skb, struct netdev *dev, size_t len) {
     struct arp_hdr *arphdr = (struct arp_hdr *)(skb->data + ETH_HDR_LEN);
     struct arp_ipv4 *arpdata = (struct arp_ipv4 *)arphdr->data;
 
@@ -66,18 +66,10 @@ void arp_reply(struct sk_buff *skb, struct netdev *dev) {
     arphdr->hwtype = htons(arphdr->hwtype);
     arphdr->protype = htons(arphdr->protype);
 
-
-    struct eth_hdr *ethhdr = (struct eth_hdr *)skb->data;
-    memcpy(ethhdr->dst_mac, arpdata->dmac, 6);
-    memcpy(ethhdr->src_mac, arpdata->smac, 6);
-    ethhdr->ethertype = ARP_ETHERTYPE;
-    ethhdr_dbg("out ", ethhdr);
-    ethhdr->ethertype = htons(ethhdr->ethertype);
-
-    ret = netdev_transmit(skb, dev);
+    return ethernet_reply(arpdata->dmac, arpdata->smac, ARP_ETHERTYPE, dev, skb, len - ETH_HDR_LEN);
 }
 
-void arp_recv(struct sk_buff *skb, int len) {
+int arp_recv(struct sk_buff *skb, int len) {
     struct netdev *net_dev;
     int merge = 0;
     struct arp_hdr *arphdr = (struct arp_hdr*)(skb->data + ETH_HDR_LEN);
@@ -89,12 +81,12 @@ void arp_recv(struct sk_buff *skb, int len) {
 
     if (arphdr->hwtype != ARP_ETHERNET) {
         print_err("ARP: Unsupported HW type\n");
-        return;
+        // goto drop_pkt;
     }
     
     if (arphdr->protype != ARP_IPV4) {
         print_err("ARP: Unsupported protocol\n");
-        return;
+        // goto drop_pkt;
     }
 
     struct arp_ipv4 *arpdata = (struct arp_ipv4*)(skb->data + ETH_HDR_LEN + ARP_HDR_LEN);
@@ -106,27 +98,33 @@ void arp_recv(struct sk_buff *skb, int len) {
     merge = arp_cache_update(arphdr, arpdata);
     if (!(net_dev = netdev_get(arpdata->dest_ip))) {
         print_err("ARP was not for us.\n");
-        return;
+        // goto drop_pkt;
     }
 
     if ((!merge && arp_cache_insert(arphdr, arpdata)) != 0) {
         print_err("ERR: No free space in ARP translation table\n");
-        return;
+        // goto drop_pkt;
     }
 
     if (arphdr->opcode == ARP_REQUEST) {
-        arp_reply(skb, net_dev);
+        return arp_reply(skb, net_dev, len);
     } else if (arphdr->opcode == ARP_REPLY) {
         printf("🎉 Got replied to ARP request.\n");
+        // goto drop_pkt;
     }
+
+// drop_pkt:
+    // free(skb);
+
+    return 0;
 }
 
 int arp_request(const uint32_t dip/*in network order*/, struct netdev *dev) {
     struct sk_buff *req_skb = skbuff_alloc(2048);
-    skb_reserve(req_skb, ARP_HDR_LEN + ETH_HDR_LEN + ARP_DATA_LEN);
+    // skb_reserve(req_skb, ARP_HDR_LEN + ETH_HDR_LEN + ARP_DATA_LEN);
 
-    skb_push(req_skb, ARP_DATA_LEN);
-    struct arp_ipv4 *arpdata = (struct arp_ipv4 *)req_skb->data;
+    struct arp_hdr *arphdr = arp_header(req_skb);
+    struct arp_ipv4 *arpdata = (struct arp_ipv4 *)arphdr->data;
     memcpy(arpdata->smac, dev->hwaddr, dev->haddr_len);
     arpdata->src_ip = dev->addr;
     memcpy(arpdata->dmac, request_mac, dev->haddr_len);
@@ -134,9 +132,7 @@ int arp_request(const uint32_t dip/*in network order*/, struct netdev *dev) {
     arpdata_dbg("req ", arpdata);
     arpdata->src_ip = htonl(arpdata->src_ip);
     arpdata->dest_ip = htonl(arpdata->dest_ip);
-
-    skb_push(req_skb, ARP_HDR_LEN);
-    struct arp_hdr *arphdr = (struct arp_hdr *)req_skb->data;
+    
     arphdr->hwtype = ARP_ETHERNET;
     arphdr->protype = ARP_IPV4;
     arphdr->hwlen = dev->haddr_len;
@@ -147,17 +143,7 @@ int arp_request(const uint32_t dip/*in network order*/, struct netdev *dev) {
     arphdr->protype = htons(arphdr->protype);
     arphdr->opcode = htons(arphdr->opcode);
     
-    skb_push(req_skb, ETH_HDR_LEN);
-    struct eth_hdr *ethhdr = (struct eth_hdr *)req_skb->data;
-    memcpy(ethhdr->dst_mac, broadcast_mac, dev->haddr_len);
-    memcpy(ethhdr->src_mac, dev->hwaddr, dev->haddr_len);
-    ethhdr->ethertype = ARP_ETHERTYPE;
-    ethhdr_dbg("req ", ethhdr);
-    ethhdr->ethertype = htons(ethhdr->ethertype);
-    
-    int ret = netdev_transmit(req_skb, dev);
-    free_skb(req_skb);
-    return ret;
+    return ethernet_reply(broadcast_mac, arpdata->smac, ARP_ETHERTYPE, dev, req_skb, ARP_HDR_LEN + ARP_DATA_LEN);
 }
 
 void arp_cache_init() {

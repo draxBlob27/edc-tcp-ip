@@ -3,8 +3,8 @@
 #define DEBUG_ARP
 
 #include "syshead.h"
-#include "ethernet.h"
 #include "time.h"
+#include "ethernet.h"
 #include "netdev.h"
 #include "skbuff.h"
 
@@ -79,10 +79,14 @@ struct arp_entry {
 
 void arp_init();
 void arp_cache_init();
-void arp_recv(struct sk_buff *skb, int len);
-void arp_reply(struct sk_buff *skb, struct netdev *dev);
+int arp_recv(struct sk_buff *skb, int len);
+int arp_reply(struct sk_buff *skb, struct netdev *dev, size_t len);
 int arp_request(const uint32_t dip, struct netdev *dev);
 int arp_cache_update(struct arp_hdr *arphdr, struct arp_ipv4 *arpdata);
 int arp_cache_insert(struct arp_hdr *arphdr, struct arp_ipv4 *arpdata);
 uint8_t *arp_get_hwaddr(uint32_t sip);
+
+static inline struct arp_hdr *arp_header(struct sk_buff *skb) {
+    return (struct arp_hdr *)(skb->data + ETH_HDR_LEN);
+}
 #endif //ARP_H

@@ -10,7 +10,7 @@
 #define IPV4_HDR_LEN sizeof(struct ipv4_hdr)
 #define IPV4 0x04
 #define IPV4_TCP 0x06
-#define ICMPV4 0x0
+#define ICMPV4 0x01
 
 #ifdef DEBUG_IPV4
 #define ipv4hdr_dbg(msg, hdr) \
@@ -19,7 +19,8 @@
                 "len: %d, id: %d, flags: %d, frag_offset: %d, ttl: %d "\
                 "protocol: %d, hdr_csum: %d, src_addr: %d.%d.%d.%d "\
                 "dest_addr: %d.%d.%d.%d)\n", hdr->version, hdr->ihl, hdr->tos,\
-                hdr->len, hdr->id, hdr->flags, hdr->frag_offset, hdr->ttl,\
+                hdr->len, hdr->id, (hdr->flags_and_frag_offset >> 13) & 0xff, \
+                (hdr->flags_and_frag_offset >> 3) & 0xff, hdr->ttl,\
                 hdr->protocol, hdr->hdr_csum, (hdr->src_addr >> 24) & 0xff, (hdr->src_addr >> 16) & 0xff,\
                 (hdr->src_addr >> 8) & 0xff, (hdr->src_addr >> 0) & 0xff, (hdr->dest_addr >> 24) & 0xff,\
                 (hdr->dest_addr >> 16) & 0xff, (hdr->dest_addr >> 8) & 0xff, (hdr->dest_addr >> 0) & 0xff);\
@@ -34,8 +35,7 @@ struct ipv4_hdr {
     uint8_t tos;
     uint16_t len;
     uint16_t id;
-    uint16_t frag_offset : 13;
-    uint8_t flags : 3;
+    uint16_t flags_and_frag_offset;
     uint8_t ttl;
     uint8_t protocol;
     uint16_t hdr_csum;
@@ -45,7 +45,7 @@ struct ipv4_hdr {
 } __attribute__((packed));
 
 static inline struct ipv4_hdr *ipv4_header(struct sk_buff *skb) {
-    return (struct tcp_hdr *)(skb->data + ETH_HDR_LEN);
+    return (struct ipv4_hdr *)(skb->data + ETH_HDR_LEN);
 }
 uint16_t internet_checksum(void *addr, size_t count, uint64_t st_sum);
 void ipv4_recv(struct sk_buff *skb, size_t len);

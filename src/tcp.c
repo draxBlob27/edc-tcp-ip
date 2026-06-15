@@ -75,10 +75,10 @@ int32_t tcp_src_port_id(uint16_t port_number) {
 }
 
 void tcp_syn_ack(struct tcp_conn *conn) {
-    struct sk_buff *skb = skbuff_alloc(2048);
-    skb_reserve(skb, ETH_HDR_LEN + IPV4_HDR_LEN + TCP_HDR_LEN);
+    struct sk_buff *req_skb = skbuff_alloc(2048);
+    // skb_reserve(skb, ETH_HDR_LEN + IPV4_HDR_LEN + TCP_HDR_LEN);
 
-    skb_push(skb, TCP_HDR_LEN);
+    // skb_push(req_skb, TCP_HDR_LEN);
     struct tcp_hdr *tcphdr = tcp_header(skb);
     tcphdr->src_port = conn->src_port;
     tcphdr->dest_port = conn->dest_port;

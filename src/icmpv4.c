@@ -4,7 +4,7 @@
 #include "../include/utils.h"
 
 void icmpv4_recv(struct sk_buff *skb, size_t len, struct netdev *dev) {
-    struct icmpv4_hdr *icmpv4hdr = (struct icmpv4_hdr *)(skb->data + ETH_HDR_LEN + IPV4_HDR_LEN);
+    struct icmpv4_hdr *icmpv4hdr = icmpv4_header(skb);
 
     icmpv4hdr->checksum = ntohs(icmpv4hdr->checksum);
     icmpv4hdr->identifier = ntohs(icmpv4hdr->identifier);
@@ -31,7 +31,7 @@ void icmpv4_recv(struct sk_buff *skb, size_t len, struct netdev *dev) {
 
 void icmpv4_reply(struct sk_buff *skb, size_t len, struct netdev *dev) {
     //this contains ipv4 hdr in network order
-    struct ipv4_hdr *ipv4hdr = (struct ipv4_hdr *)(skb->data + ETH_HDR_LEN);
+    struct ipv4_hdr *ipv4hdr = ipv4_header(skb);
     struct icmpv4_hdr *icmpv4hdr = (struct icmpv4_hdr *)(ipv4hdr->data); //in network order
 
     icmpv4hdr->type = ECHO_REPLY;
@@ -48,7 +48,7 @@ void icmpv4_reply(struct sk_buff *skb, size_t len, struct netdev *dev) {
     icmpv4hdr->identifier = htons(icmpv4hdr->identifier);
     icmpv4hdr->sequence_no = htons(icmpv4hdr->sequence_no);
 
-    int ret = ipv4_reply(ipv4hdr->src_addr, ICMPV4, skb, len, dev);
+    int ret = ipv4_reply(ipv4hdr->src_addr, ICMPV4, skb, skb->len - ETH_HDR_LEN - IPV4_HDR_LEN, dev);
     if (ret == -1) {
         return;
     }
@@ -56,10 +56,9 @@ void icmpv4_reply(struct sk_buff *skb, size_t len, struct netdev *dev) {
 
 int icmpv4_request(const uint32_t dip/*in network order*/, struct netdev *dev) {
     struct sk_buff *req_skb = skbuff_alloc(2048);
-    skb_reserve(req_skb, IPV4_HDR_LEN + ETH_HDR_LEN + ICMPV4_HDR_LEN + 56);
+    // skb_reserve(req_skb, IPV4_HDR_LEN + ETH_HDR_LEN + ICMPV4_HDR_LEN + 56);
 
-    skb_push(req_skb, ICMPV4_HDR_LEN + 56);
-    struct icmpv4_hdr *icmpv4hdr = (struct icmpv4_hdr *)req_skb->data;
+    struct icmpv4_hdr *icmpv4hdr = icmpv4_header(req_skb);
     icmpv4hdr->type = ECHO_REQUEST;
     icmpv4hdr->code = 0;
     icmpv4hdr->identifier = 0x1234;
@@ -75,6 +74,5 @@ int icmpv4_request(const uint32_t dip/*in network order*/, struct netdev *dev) {
 
     icmpv4hdr->checksum = internet_checksum(icmpv4hdr, 64, 0);
 
-    skb_push(req_skb, IPV4_HDR_LEN);
     return ipv4_reply(dip, ICMPV4, req_skb, ICMPV4_HDR_LEN + 56, dev);
 }

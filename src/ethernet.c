@@ -1,5 +1,4 @@
 #include "../include/ethernet.h"
-#include "../include/arp.h"
 
 void parse_ethernet(struct sk_buff *skb, int nread) {
     struct eth_hdr *ethhdr = (struct eth_hdr *)skb->data;
@@ -10,10 +9,9 @@ void parse_ethernet(struct sk_buff *skb, int nread) {
     ethhdr_dbg("in ", ethhdr);
 
     if (ethhdr->ethertype == ARP_ETHERTYPE) {//ARPING
-        arp_recv(skb, nread);
-        
+        printf("ARP message\n");
     } else if (ethhdr->ethertype == 0x0800) {//IPv4
-        printf("Ipv4 address\n");
+        printf("IPV4 message\n");
     } else {
         printf("Ipv6 or corrupted\n");
     }
@@ -27,8 +25,8 @@ int ethernet_reply(uint8_t *dst_mac, uint8_t *src_mac, uint16_t ethertype,\
         memcpy(ethhdr->dst_mac, dst_mac, 6);
         memcpy(ethhdr->src_mac, src_mac, 6);
         ethhdr->ethertype = ethertype; //in host order
-
         ethhdr_dbg("out ", ethhdr);
         ethhdr->ethertype = htons(ethhdr->ethertype);
+        skb->len = len + ETH_HDR_LEN;
         int ret = netdev_transmit(skb, dev);
     }

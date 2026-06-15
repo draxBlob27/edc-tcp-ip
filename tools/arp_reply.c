@@ -50,7 +50,5 @@ int main(int argc, char* argv[]) {
         } else {
             printf("Ipv6 or corrupted\n");
         }
-
-        free_skb(skb);
     }
 }
