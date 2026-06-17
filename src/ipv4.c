@@ -2,8 +2,9 @@
 #include "../include/icmpv4.h"
 #include "../include/arp.h"
 #include "../include/utils.h"
+#include "../include/tcp.h"
 
-uint16_t internet_checksum(void *addr, size_t count, uint64_t st_sum) {
+uint64_t internet_checksum_partial(void *addr, size_t count, uint64_t st_sum) {
     //assumes underlying data is in network order.
     uint64_t csum = st_sum;
     uint8_t *p = addr;
@@ -17,6 +18,10 @@ uint16_t internet_checksum(void *addr, size_t count, uint64_t st_sum) {
         csum += *(uint8_t *)p;
     }
 
+    return csum;
+}
+
+uint16_t internet_checksum_final(uint64_t csum) {
     csum = (csum & 0xffffffff) + (csum >> 32);
     csum = (csum & 0xffff) + (csum >> 16);
     csum = (csum & 0xffff) + (csum >> 16);
@@ -43,7 +48,8 @@ void ipv4_recv(struct sk_buff *skb, size_t len) {
         return;
     }
 
-    uint16_t recv_csum = internet_checksum(ipv4hdr, ipv4hdr->ihl * 4, 0);
+    uint64_t p_csum = internet_checksum_partial(ipv4hdr, ipv4hdr->ihl * 4, 0);
+    uint16_t recv_csum = internet_checksum_final(p_csum);
     if (recv_csum != 0) {
         print_err("IPV4: Datagram invalidated.\n");
         return;
@@ -67,6 +73,8 @@ void ipv4_recv(struct sk_buff *skb, size_t len) {
 
     if (ipv4hdr->protocol == ICMPV4) {
         icmpv4_recv(skb, len, net_dev);
+    } else if (ipv4hdr->protocol == IPV4_TCP) {
+        tcp_recv(ipv4hdr->src_addr, ipv4hdr->dest_addr, skb);
     } else {
         print_err("IPV4: Not an ICMP msg.\n");
     }
@@ -97,7 +105,8 @@ int ipv4_reply(uint32_t dip/*in netwrok order*/, uint8_t protocol, struct sk_buf
     ipv4hdr->dest_addr = htonl(ipv4hdr->dest_addr); //in network order
 
     ipv4hdr->hdr_csum = 0;
-    ipv4hdr->hdr_csum = internet_checksum(ipv4hdr, ipv4hdr->ihl * 4, 0); //in network order;
+    uint64_t p_csum = internet_checksum_partial(ipv4hdr, ipv4hdr->ihl * 4, 0);
+    ipv4hdr->hdr_csum = internet_checksum_final(p_csum); //in network order;
 
     uint8_t *dmac = arp_get_hwaddr(ntohl(dip));
     if (!dmac) {

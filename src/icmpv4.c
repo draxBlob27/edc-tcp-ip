@@ -16,7 +16,8 @@ void icmpv4_recv(struct sk_buff *skb, size_t len, struct netdev *dev) {
     icmpv4hdr->identifier = htons(icmpv4hdr->identifier);
     icmpv4hdr->sequence_no = htons(icmpv4hdr->sequence_no);
 
-    uint16_t csum = internet_checksum(icmpv4hdr, skb->len - ETH_HDR_LEN - IPV4_HDR_LEN, 0);
+    uint64_t p_csum = internet_checksum_partial(icmpv4hdr, skb->len - ETH_HDR_LEN - IPV4_HDR_LEN, 0);
+    uint16_t csum = internet_checksum_final(p_csum);
     if (csum != 0) {
         print_err("ICMP: Packet corrupted\n");
         return;
@@ -36,7 +37,8 @@ void icmpv4_reply(struct sk_buff *skb, size_t len, struct netdev *dev) {
 
     icmpv4hdr->type = ECHO_REPLY;
     icmpv4hdr->checksum = 0;
-    icmpv4hdr->checksum = internet_checksum(icmpv4hdr, skb->len - ETH_HDR_LEN - IPV4_HDR_LEN, 0);
+    uint64_t p_csum = internet_checksum_partial(icmpv4hdr, skb->len - ETH_HDR_LEN - IPV4_HDR_LEN, 0);
+    icmpv4hdr->checksum = internet_checksum_final(p_csum);
 
     icmpv4hdr->checksum = ntohs(icmpv4hdr->checksum);
     icmpv4hdr->identifier = ntohs(icmpv4hdr->identifier);
@@ -71,8 +73,8 @@ int icmpv4_request(const uint32_t dip/*in network order*/, struct netdev *dev) {
     icmpv4hdr->checksum = htons(icmpv4hdr->checksum);
     icmpv4hdr->identifier = htons(icmpv4hdr->identifier);
     icmpv4hdr->sequence_no = htons(icmpv4hdr->sequence_no);
-
-    icmpv4hdr->checksum = internet_checksum(icmpv4hdr, 64, 0);
+    uint64_t p_csum = internet_checksum_partial(icmpv4hdr, 64, 0);
+    icmpv4hdr->checksum = internet_checksum_final(p_csum);
 
     return ipv4_reply(dip, ICMPV4, req_skb, ICMPV4_HDR_LEN + 56, dev);
 }

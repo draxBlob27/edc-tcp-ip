@@ -47,7 +47,8 @@ struct ipv4_hdr {
 static inline struct ipv4_hdr *ipv4_header(struct sk_buff *skb) {
     return (struct ipv4_hdr *)(skb->data + ETH_HDR_LEN);
 }
-uint16_t internet_checksum(void *addr, size_t count, uint64_t st_sum);
+uint16_t internet_checksum_final(uint64_t csum);
+uint64_t internet_checksum_partial(void *addr, size_t count, uint64_t st_sum);
 void ipv4_recv(struct sk_buff *skb, size_t len);
 int ipv4_reply(uint32_t dip, uint8_t protocol, struct sk_buff *skb, size_t len, struct netdev *dev);
 

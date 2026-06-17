@@ -6,6 +6,8 @@ tap1 <ipaddr> = 192.168.0.2, <macaddr>
 ./scripts/setup_linux.sh tap0 192.168.0.1 02:11:22:33:44:55
 ./scripts/setup_mine.sh tap0 192.168.0.254 02:AA:BB:CC:DD:EE
 
+set args tap0 192.168.0.254 02:AA:BB:CC:DD:EE
+
 
 1. Understanding TUN/TAP was not easy. 
     -> Best resource, slighlty hard to ingest but very good and thorugh.(https://backreference.org/2010/03/26/tuntap-interface-tutorial/)
