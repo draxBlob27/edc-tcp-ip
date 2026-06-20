@@ -37,8 +37,9 @@ struct tcp_conn *tcp_conn_find(uint32_t src_ip, uint32_t dest_ip, \
     uint32_t src_port, uint32_t dest_port) {
     for (int i = 0; i < MAX_CONNECTIONS; i++) {
         struct tcp_conn *conn = connections[i];
-        if (conn->dest_port == dest_port && conn->src_port == src_port \
-            && conn->src_ip == src_ip && conn->dest_ip == dest_ip) {
+        if (conn->dest_port == src_port && \
+            conn->src_port == dest_port && \
+            conn->src_ip == dest_ip && conn->dest_ip == src_ip) {
                 return conn;
             }
 
@@ -102,14 +103,17 @@ void tcp_send_segment(struct tcp_conn *conn, uint8_t ctl_bits, \
     tcphdr->ctl_bits = ctl_bits;
     tcphdr->data_offset = 5;
     tcphdr->checksum = 0;
+    tcphdr->window = conn->rcv_wnd;
     memcpy(tcphdr->data, payload, payload_len);
 
-    struct tcp_pseudo_hdr *tcp_psuedohdr = tcp_pseudo_header(conn->src_ip, conn->dest_ip, tcphdr->data_offset * 4 + payload_len);
+    struct tcp_pseudo_hdr *tcp_psuedohdr = tcp_pseudo_header(conn->src_ip,conn->dest_ip, tcphdr->data_offset * 4 + payload_len);
 
     tcphdr->checksum = tcp_checksum(tcp_psuedohdr, req_skb);
-    struct netdev *dev = netdev_get(conn->src_ip);
+    struct netdev *dev = netdev_get(ntohl(conn->src_ip));
 
-    ipv4_reply(conn->dest_ip, IPV4_TCP, req_skb, TCP_HDR_LEN + payload_len, dev);
+    tcp_hdr_dbg(tcphdr, " out: ");
+
+    ipv4_reply(conn->dest_ip, IPV4_TCP, req_skb, tcphdr->data_offset * 4 + payload_len, dev);
 }
 
 void tcp_recv(uint32_t src_ip/*network order*/, \
@@ -117,6 +121,7 @@ void tcp_recv(uint32_t src_ip/*network order*/, \
     struct sk_buff *skb) {
     struct tcp_hdr *tcphdr = tcp_header(skb); //network order;
     tcp_hdr_dbg(tcphdr, "in");
+
     uint32_t src_port = tcphdr->src_port, \
             dest_port = tcphdr->dest_port;
 
@@ -139,19 +144,25 @@ void tcp_recv(uint32_t src_ip/*network order*/, \
         return;
     }
 
-    //create a TCB with SYN_RECEVIVED state
-    struct tcp_conn *conn = tcp_conn_new(src_ip, dest_ip, src_port, dest_port);
+    //find for TCB
+    struct tcp_conn *conn = tcp_conn_find(src_ip, dest_ip, src_port, dest_port);
+    if (!conn) {
+        //create a TCB with SYN_RECEVIVED state
+        conn = tcp_conn_new(src_ip, dest_ip,\
+                                        src_port, dest_port);
+    }
+        
 
     switch(conn->state) {
         case LISTEN: {
             //transition to SYN_RECV
             conn->state = SYN_RECEIVED;
-            conn->rcv_nxt = tcphdr->seq_no + 1;
-            uint32_t isn = htonl(generate_isn());
-            conn->snd_una = isn;
-            conn->snd_nxt = isn + 1;
-            conn->rcv_wnd = tcphdr->window;
-            conn->snd_wnd = SENDER_WINDOW_LEN;
+            conn->rcv_nxt = htonl(ntohl(tcphdr->seq_no) + 1); //network
+            uint32_t isn = generate_isn();
+            conn->snd_una = htonl(isn); //network
+            conn->snd_nxt = htonl(isn + 1); //network
+            conn->rcv_wnd = tcphdr->window; //network
+            conn->snd_wnd = SENDER_WINDOW_LEN; //
 
             tcp_send_segment(conn, SYN | ACK, NULL, 0);
             break;
@@ -163,7 +174,18 @@ void tcp_recv(uint32_t src_ip/*network order*/, \
             break;
         }
         case ESTABLISHED: {
-            printf("Connection open, cant handle data tf.");
+            if (tcphdr->ctl_bits == ACK) {
+                printf("Connection established, ignoring ACK.\n");
+            } else {
+                conn->state = CLOSED;
+                conn->rcv_nxt = htonl(ntohl(tcphdr->seq_no) + 1); //network
+                conn->snd_una = htonl(ntohl(conn->snd_una) + 1); //network
+                conn->snd_nxt = tcphdr->ack_no; //network
+                conn->rcv_wnd = tcphdr->window; //network
+                conn->snd_wnd = SENDER_WINDOW_LEN; //
+                tcp_send_segment(conn, RST, NULL, 0);
+                printf("Connection closed after handshake.\n");
+            }
             break;
         }
 

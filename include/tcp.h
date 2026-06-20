@@ -29,10 +29,10 @@
         print_dbg("TCP hdr "str": src port: %u, dest port: %u, "\
             "seq no: %u, ack no: %u, data off: %d, ctl_bits: %.02x "\
             "window: %d, checksum: %u, urg ptr: %d, options: %d ",\
-            ntohs(hdr->src_port), ntohs(hdr->dest_port), ntohl(hdr->seq_no), htonl(hdr->ack_no),\
+            ntohs(hdr->src_port), ntohs(hdr->dest_port), ntohl(hdr->seq_no), ntohl(hdr->ack_no),\
             hdr->data_offset, hdr->ctl_bits, ntohs(hdr->window),\
             ntohs(hdr->checksum),\
-            hdr->urg_ptr, ntohl(hdr->options));\
+            ntohs(hdr->urg_ptr), ntohl(hdr->options));\
     } while(0)
 #else
 #define tcp_hdr_dbg(hdr, str);
@@ -134,7 +134,7 @@ static inline struct tcp_pseudo_hdr *tcp_pseudo_header(\
     struct tcp_pseudo_hdr *tcp_pseudohdr = malloc(TCP_PSEUDO_HDR_LEN);
     tcp_pseudohdr->dest_ip = dest_ip;
     tcp_pseudohdr->src_ip = src_ip;
-    tcp_pseudohdr->zeros_and_protocol = 0x6000;
+    tcp_pseudohdr->zeros_and_protocol = htons(IPV4_TCP);
     tcp_pseudohdr->tcp_length = htons(len);
 
     return tcp_pseudohdr;

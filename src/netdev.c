@@ -28,7 +28,7 @@ struct netdev *netdev_alloc(char *if_name, char *addr, char *hwaddr, uint32_t mt
     return dev;
 }
 
-struct netdev *netdev_get(uint32_t sip) {
+struct netdev *netdev_get(uint32_t sip/*host order*/) {
     // printf("%u.%u.%u.%u", \
     //     (my_dev->addr >> 24) & 0xff, \
     //     (my_dev->addr >> 16) & 0xff,\
