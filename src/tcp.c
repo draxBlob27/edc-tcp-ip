@@ -156,37 +156,52 @@ void tcp_recv(uint32_t src_ip/*network order*/, \
     switch(conn->state) {
         case LISTEN: {
             //transition to SYN_RECV
-            conn->state = SYN_RECEIVED;
-            conn->rcv_nxt = htonl(ntohl(tcphdr->seq_no) + 1); //network
-            uint32_t isn = generate_isn();
-            conn->snd_una = htonl(isn); //network
-            conn->snd_nxt = htonl(isn + 1); //network
-            conn->rcv_wnd = tcphdr->window; //network
-            conn->snd_wnd = SENDER_WINDOW_LEN; //
-
-            tcp_send_segment(conn, SYN | ACK, NULL, 0);
+            if (tcphdr->ctl_bits == SYN) {
+                conn->state = SYN_RECEIVED;
+                conn->rcv_nxt = htonl(ntohl(tcphdr->seq_no) + 1); //network
+                uint32_t isn = generate_isn();
+                conn->snd_una = htonl(isn); //network
+                conn->rcv_wnd = tcphdr->window; //network
+                conn->snd_wnd = SENDER_WINDOW_LEN; //
+    
+                tcp_send_segment(conn, SYN | ACK, NULL, 0);
+            }
             break;
         }
         case SYN_RECEIVED: {
             //trnsion to ESTAB
-            conn->state = ESTABLISHED;
-            printf("Connection established\n.");
-            break;
-        }
-        case ESTABLISHED: {
             if (tcphdr->ctl_bits == ACK) {
-                printf("Connection established, ignoring ACK.\n");
-            } else {
-                conn->state = CLOSED;
-                conn->rcv_nxt = htonl(ntohl(tcphdr->seq_no) + 1); //network
-                conn->snd_una = htonl(ntohl(conn->snd_una) + 1); //network
-                conn->snd_nxt = tcphdr->ack_no; //network
+                conn->state = ESTABLISHED;
+                printf("Connection established\n.");
+                conn->rcv_nxt = tcphdr->seq_no; //network
+                conn->snd_una = tcphdr->ack_no; //network
                 conn->rcv_wnd = tcphdr->window; //network
                 conn->snd_wnd = SENDER_WINDOW_LEN; //
-                tcp_send_segment(conn, RST, NULL, 0);
-                printf("Connection closed after handshake.\n");
+                tcp_send_segment(conn, FIN | ACK, NULL, 0);
+                conn->state = FIN_WAIT_1;
             }
             break;
+        }
+        case FIN_WAIT_1: {
+            if (tcphdr->ctl_bits == ACK) {
+                conn->state = FIN_WAIT_2;
+            }
+            break;
+        }
+        case FIN_WAIT_2: {
+            if (tcphdr->ctl_bits == (FIN | ACK)) {
+                conn->state = TIME_WAIT;
+                conn->rcv_nxt = htonl(ntohl(tcphdr->seq_no) + 1); //network
+                conn->snd_una = tcphdr->ack_no;
+                conn->rcv_wnd = tcphdr->window; //network
+                conn->snd_wnd = SENDER_WINDOW_LEN; //
+                tcp_send_segment(conn, ACK, NULL, 0);
+                conn->state = CLOSED;
+            }
+            break;
+        }
+        case CLOSED: {
+            conn->valid = 0;
         }
 
         default: {
