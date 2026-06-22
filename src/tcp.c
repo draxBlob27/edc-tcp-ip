@@ -140,7 +140,14 @@ void tcp_recv(uint32_t src_ip/*network order*/, \
     if (port_id == -1 || ports[port_id]->state != LISTEN) {
         //will need to send RST.
         printf("Port unavailable.\n");
+        struct tcp_conn *conn = tcp_conn_new(src_ip, dest_ip,\
+                                        src_port, dest_port);
+
+        conn->snd_una = tcphdr->ack_no;
+        conn->rcv_nxt = htonl(ntohl(tcphdr->seq_no) + 1);
+        tcp_send_segment(conn, RST | ACK, NULL, 0);
         // tcp_send_rst();
+        conn->valid = 0;
         return;
     }
 
