@@ -6,6 +6,8 @@ tap1 <ipaddr> = 192.168.0.2, <macaddr>
 ./scripts/setup_linux.sh tap0 192.168.0.1 02:11:22:33:44:55
 ./scripts/setup_mine.sh tap0 192.168.0.254 02:AA:BB:CC:DD:EE
 
+set args tap0 192.168.0.254 02:AA:BB:CC:DD:EE
+
 
 1. Understanding TUN/TAP was not easy. 
     -> Best resource, slighlty hard to ingest but very good and thorugh.(https://backreference.org/2010/03/26/tuntap-interface-tutorial/)
@@ -76,8 +78,25 @@ info, instead of copying the buffer, the headroom is shrunked and data pointer i
 -> while travelling up the stack, the required header is read and headroom is expanded. Eliminating the need
 of copying data every time.
 
-28. while refactoring my packet dujmper, i was freeing only the sb_buff structure, which aused memory as 
+28. while refactoring my packet dumper, i was freeing only the sb_buff structure, which aused memory as 
 underlying buffer was not getting freed. soln was to free(skb->head) as well.
 ?? why not skb->data, because these pointers move while traversing the stack. head remains where it started.
 
 29. It is easier for development if every part of stack assumes data it recevied is in network order or host order, not an intermix of two.
+
+30. GDB is a great tool to find endianness mistakes, memory allocations issues. Basically a very good 
+debugger.
+
+31. TCP RFC (https://datatracker.ietf.org/doc/html/rfc793)
+32. It says about sockets -> To allow for many processes within a single Host to use TCP
+    communication facilities simultaneously, the TCP provides a set of
+    addresses or ports within each host.  Concatenated with the network
+    and host addresses from the internet communication layer, this forms
+    a socket.  A pair of sockets uniquely identifies each connection.
+    That is, a socket may be simultaneously used in multiple
+    connections.
+
+33. TCP header format (https://datatracker.ietf.org/doc/html/rfc793#section-3.1)
+
+34. Till now i was doing this, reading from buffer, mutating it in place, writing it to fd as reply.
+35. But in tcp this approach wont work. 

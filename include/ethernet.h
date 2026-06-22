@@ -4,6 +4,7 @@
 
 #include "syshead.h"
 #include "skbuff.h"
+#include "netdev.h"
 
 #define ARP_ETHERTYPE   0x0806
 #define ETH_HDR_LEN sizeof(struct eth_hdr)
@@ -30,5 +31,11 @@ struct eth_hdr {
 } __attribute__((packed));
 
 void parse_ethernet(struct sk_buff *skb, int nread);
+int ethernet_reply(uint8_t *dst_mac, uint8_t *src_mac, uint16_t ethertype,\
+     struct netdev *dev, struct sk_buff *skb, size_t len);
+
+static inline struct eth_hdr *eth_Header(struct sk_buff *skb) {
+    return (struct eth_hdr *)skb->data;
+}
 
 #endif //ETHERNET_H

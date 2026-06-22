@@ -1,11 +1,12 @@
 #include "../include/ipv4.h"
 #include "../include/icmpv4.h"
-#include "../include/ethernet.h"
 #include "../include/arp.h"
 #include "../include/utils.h"
+#include "../include/tcp.h"
 
-uint16_t internet_checksum(void *addr, size_t count) {
-    uint64_t csum = 0;
+uint64_t internet_checksum_partial(void *addr, size_t count, uint64_t st_sum) {
+    //assumes underlying data is in network order.
+    uint64_t csum = st_sum;
     uint8_t *p = addr;
     while(count > 1) {
         csum += *(uint16_t *)p;
@@ -17,6 +18,10 @@ uint16_t internet_checksum(void *addr, size_t count) {
         csum += *(uint8_t *)p;
     }
 
+    return csum;
+}
+
+uint16_t internet_checksum_final(uint64_t csum) {
     csum = (csum & 0xffffffff) + (csum >> 32);
     csum = (csum & 0xffff) + (csum >> 16);
     csum = (csum & 0xffff) + (csum >> 16);
@@ -25,7 +30,7 @@ uint16_t internet_checksum(void *addr, size_t count) {
 }
 
 void ipv4_recv(struct sk_buff *skb, size_t len) {
-    struct ipv4_hdr *ipv4hdr = (struct ipv4_hdr *)(skb->data + ETH_HDR_LEN); //network order
+    struct ipv4_hdr *ipv4hdr = ipv4_header(skb); //network order
     struct netdev *net_dev;
     
     if (ipv4hdr->version != IPV4) {
@@ -43,7 +48,8 @@ void ipv4_recv(struct sk_buff *skb, size_t len) {
         return;
     }
 
-    uint16_t recv_csum = internet_checksum(ipv4hdr, ipv4hdr->ihl * 4);
+    uint64_t p_csum = internet_checksum_partial(ipv4hdr, ipv4hdr->ihl * 4, 0);
+    uint16_t recv_csum = internet_checksum_final(p_csum);
     if (recv_csum != 0) {
         print_err("IPV4: Datagram invalidated.\n");
         return;
@@ -51,7 +57,7 @@ void ipv4_recv(struct sk_buff *skb, size_t len) {
 
     ipv4hdr->len = ntohs(ipv4hdr->len);
     ipv4hdr->id = ntohs(ipv4hdr->id);
-    ipv4hdr->frag_offset = ntohs(ipv4hdr->frag_offset);
+    ipv4hdr->flags_and_frag_offset = ntohs(ipv4hdr->flags_and_frag_offset);
     ipv4hdr->hdr_csum = ntohs(ipv4hdr->hdr_csum);
     ipv4hdr->src_addr = ntohl(ipv4hdr->src_addr);
     ipv4hdr->dest_addr = ntohl(ipv4hdr->dest_addr);
@@ -60,26 +66,31 @@ void ipv4_recv(struct sk_buff *skb, size_t len) {
 
     ipv4hdr->len = htons(ipv4hdr->len);
     ipv4hdr->id = htons(ipv4hdr->id);
-    ipv4hdr->frag_offset = htons(ipv4hdr->frag_offset);
+    ipv4hdr->flags_and_frag_offset = htons(ipv4hdr->flags_and_frag_offset);
     ipv4hdr->hdr_csum = htons(ipv4hdr->hdr_csum);
     ipv4hdr->src_addr = htonl(ipv4hdr->src_addr);
     ipv4hdr->dest_addr = htonl(ipv4hdr->dest_addr);
 
     if (ipv4hdr->protocol == ICMPV4) {
         icmpv4_recv(skb, len, net_dev);
+    } else if (ipv4hdr->protocol == IPV4_TCP) {
+        tcp_recv(ipv4hdr->src_addr, ipv4hdr->dest_addr, skb);
     } else {
         print_err("IPV4: Not an ICMP msg.\n");
     }
 }
 
 int ipv4_reply(uint32_t dip/*in netwrok order*/, uint8_t protocol, struct sk_buff *skb, size_t len, struct netdev *dev) {
-    struct ipv4_hdr *ipv4hdr = (struct ipv4_hdr *)(skb->data + ETH_HDR_LEN);
-    //all of ipv4 hdr in network order
+    struct ipv4_hdr *ipv4hdr = ipv4_header(skb);
 
-    ipv4hdr->len = ntohs(ipv4hdr->len);
-    ipv4hdr->id = ntohs(ipv4hdr->id);
-    ipv4hdr->frag_offset = ntohs(ipv4hdr->frag_offset);
-    ipv4hdr->hdr_csum = ntohs(ipv4hdr->hdr_csum);
+    ipv4hdr->ihl = 5;
+    ipv4hdr->version = IPV4;
+    ipv4hdr->tos = 0;
+    ipv4hdr->len = IPV4_HDR_LEN + len; //host order
+    ipv4hdr->id = 0x0101; //host order
+    ipv4hdr->flags_and_frag_offset = 0x4000; //host order
+    ipv4hdr->ttl = 64;
+    ipv4hdr->hdr_csum = 0;
     ipv4hdr->src_addr = dev->addr;//in host order
     ipv4hdr->dest_addr = ntohl(dip); //in host order
     ipv4hdr->protocol = protocol;
@@ -88,13 +99,14 @@ int ipv4_reply(uint32_t dip/*in netwrok order*/, uint8_t protocol, struct sk_buf
 
     ipv4hdr->len = htons(ipv4hdr->len);
     ipv4hdr->id = htons(ipv4hdr->id);
-    ipv4hdr->frag_offset = htons(ipv4hdr->frag_offset);
+    ipv4hdr->flags_and_frag_offset = htons(ipv4hdr->flags_and_frag_offset);
     ipv4hdr->hdr_csum = htons(ipv4hdr->hdr_csum);
     ipv4hdr->src_addr = htonl(ipv4hdr->src_addr);//in netowrk order
     ipv4hdr->dest_addr = htonl(ipv4hdr->dest_addr); //in network order
 
     ipv4hdr->hdr_csum = 0;
-    ipv4hdr->hdr_csum = internet_checksum(ipv4hdr, ipv4hdr->ihl * 4); //in network order;
+    uint64_t p_csum = internet_checksum_partial(ipv4hdr, ipv4hdr->ihl * 4, 0);
+    ipv4hdr->hdr_csum = internet_checksum_final(p_csum); //in network order;
 
     uint8_t *dmac = arp_get_hwaddr(ntohl(dip));
     if (!dmac) {
@@ -106,13 +118,5 @@ int ipv4_reply(uint32_t dip/*in netwrok order*/, uint8_t protocol, struct sk_buf
         return -1;
     }
 
-    struct eth_hdr *ethhdr = (struct eth_hdr *)skb->data; //ethhertype in host order as alreay swapped at main
-    memcpy(ethhdr->dst_mac, dmac, 6); 
-    memcpy(ethhdr->src_mac, dev->hwaddr, 6);
-
-    ethhdr_dbg("out ", ethhdr);
-    ethhdr->ethertype = htons(ethhdr->ethertype);
-
-    int ret = netdev_transmit(skb, dev);
-    return ret;
+    return ethernet_reply(dmac, dev->hwaddr, ARP_IPV4, dev, skb, IPV4_HDR_LEN + len);
 }
