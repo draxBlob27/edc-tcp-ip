@@ -31,9 +31,11 @@ int main(int argc, char* argv[]) {
       exit(1);
     }
 
+    struct sk_buff *skb = skbuff_alloc(2048);
+
     printf("Successfully attached to %s. Waiting for data...\n", tuntap_name);
     while(1) {
-        struct sk_buff *skb = skbuff_alloc(2048);
+        
         int nread = read(tuntap_fd,skb->data, 2048);
         skb->tail += nread;
         skb->len = nread;

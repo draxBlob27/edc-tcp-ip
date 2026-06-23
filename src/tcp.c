@@ -106,14 +106,16 @@ void tcp_send_segment(struct tcp_conn *conn, uint8_t ctl_bits, \
     tcphdr->window = conn->rcv_wnd;
     memcpy(tcphdr->data, payload, payload_len);
 
-    struct tcp_pseudo_hdr *tcp_psuedohdr = tcp_pseudo_header(conn->src_ip,conn->dest_ip, tcphdr->data_offset * 4 + payload_len);
+    struct tcp_pseudo_hdr *tcp_pseudohdr = tcp_pseudo_header(conn->src_ip,conn->dest_ip, tcphdr->data_offset * 4 + payload_len);
 
-    tcphdr->checksum = tcp_checksum(tcp_psuedohdr, req_skb);
+    tcphdr->checksum = tcp_checksum(tcp_pseudohdr, req_skb);
     struct netdev *dev = netdev_get(ntohl(conn->src_ip));
 
     tcp_hdr_dbg(tcphdr, " out: ");
 
     ipv4_reply(conn->dest_ip, IPV4_TCP, req_skb, tcphdr->data_offset * 4 + payload_len, dev);
+    free_skb(req_skb);
+    free(tcp_pseudohdr);
 }
 
 void tcp_recv(uint32_t src_ip/*network order*/, \
@@ -131,7 +133,7 @@ void tcp_recv(uint32_t src_ip/*network order*/, \
     uint16_t recv_checksum = tcp_checksum(tcp_pseudohdr, skb);
     if (recv_checksum != 0) {
         print_err("Segment courrpted.\n");
-        return;
+        goto free_pseudohdr;
     }
 
     //check if dest_port is in LISTENING STATE
@@ -148,6 +150,7 @@ void tcp_recv(uint32_t src_ip/*network order*/, \
         tcp_send_segment(conn, RST | ACK, NULL, 0);
         // tcp_send_rst();
         conn->valid = 0;
+        goto free_pseudohdr;
         return;
     }
 
@@ -216,4 +219,8 @@ void tcp_recv(uint32_t src_ip/*network order*/, \
             break;
         }
     }
+
+free_pseudohdr:
+    free(tcp_pseudohdr);
+    return;
 }

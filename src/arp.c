@@ -143,7 +143,9 @@ int arp_request(const uint32_t dip/*in network order*/, struct netdev *dev) {
     arphdr->protype = htons(arphdr->protype);
     arphdr->opcode = htons(arphdr->opcode);
     
-    return ethernet_reply(broadcast_mac, arpdata->smac, ARP_ETHERTYPE, dev, req_skb, ARP_HDR_LEN + ARP_DATA_LEN);
+    int ret = ethernet_reply(broadcast_mac, arpdata->smac, ARP_ETHERTYPE, dev, req_skb, ARP_HDR_LEN + ARP_DATA_LEN);
+    free_skb(req_skb);
+    return ret;
 }
 
 void arp_cache_init() {

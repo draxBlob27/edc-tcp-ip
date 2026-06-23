@@ -76,5 +76,7 @@ int icmpv4_request(const uint32_t dip/*in network order*/, struct netdev *dev) {
     uint64_t p_csum = internet_checksum_partial(icmpv4hdr, 64, 0);
     icmpv4hdr->checksum = internet_checksum_final(p_csum);
 
-    return ipv4_reply(dip, ICMPV4, req_skb, ICMPV4_HDR_LEN + 56, dev);
+    int ret = ipv4_reply(dip, ICMPV4, req_skb, ICMPV4_HDR_LEN + 56, dev);
+    free_skb(req_skb);
+    return ret;
 }

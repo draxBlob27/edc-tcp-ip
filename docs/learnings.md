@@ -99,4 +99,18 @@ debugger.
 33. TCP header format (https://datatracker.ietf.org/doc/html/rfc793#section-3.1)
 
 34. Till now i was doing this, reading from buffer, mutating it in place, writing it to fd as reply.
-35. But in tcp this approach wont work. 
+But in tcp this approach wont work.
+
+35. To make things easier, we should focus on separation of concerns. Earlier i was passing reponsibility
+to other layers up or down the stack. which worked fine, but required other layers to worry about something
+else with its own issues. So a revamp was initiated to separate concerns for each layer.
+
+36. Valgrind showed tcp pseudo hdr malloc was not getting freed. fixed using gotos. I have read somewhere
+gotos are obsoloete and unsafe. but it works fine for as of now. so wont change.
+
+37. stack is still quite immature, the host order or netwrok order unifimority is not explicity. I am trying
+to keep it uniform. But not always handled correctly. but i have provided comments almost everywhere required;
+
+38. RFCs are greatly detailed, enough for atleast a tcp handshake and close off. Havent tranferred data yet.
+
+39. AGAIN iteratin gdb is a gr8 tool. I am not a wizard of it. But stills it helps me alot.

@@ -22,11 +22,10 @@ int main(int argc, char* argv[]) {
 
     // *src_ip = ntohl(*src_ip);
     // *dest_ip = ntohl(*dest_ip);
-
+    struct sk_buff *skb = skbuff_alloc(2048);
     printf("Successfully attached to %s. Waiting for data...\n", tuntap_name);
     arp_init();
     while(1) {
-        struct sk_buff *skb = skbuff_alloc(2048);
         int nread = read(tuntap_fd, skb->data, 2048);
         skb->tail += nread;
         skb->len = nread;
